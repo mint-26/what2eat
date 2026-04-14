@@ -25,6 +25,7 @@ import {
   getTodaysMatch,
   fetchRemoteMatch,
   saveMatchResult,
+  resetToday,
   getMealHistory,
   saveRating,
   getShoppingList,
@@ -787,6 +788,20 @@ function AppContent() {
             }}
           />
         )}
+
+        {/* Dev-Reset (nur zum Testen) */}
+        <div className="px-5 pt-8 pb-4 text-center">
+          <button
+            onClick={async () => {
+              if (!confirm("Heute zurücksetzen? Löscht Match, Auswahl, Einkaufsliste + Bewertung für heute.")) return;
+              await resetToday(today);
+              window.location.reload();
+            }}
+            className="text-[10px] text-text-muted/50 underline decoration-dotted"
+          >
+            🧪 Test: Heute zurücksetzen
+          </button>
+        </div>
       </main>
 
       <BottomNav active={activeTab} onChange={setActiveTab} />

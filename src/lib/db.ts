@@ -239,6 +239,31 @@ export function getAllMatches(): MatchResult[] {
   return ls<MatchResult[]>("w2e_matches") ?? [];
 }
 
+/** Dev-Helper: löscht den heutigen State lokal + auf Supabase, damit neu getestet werden kann. */
+export async function resetToday(date: string) {
+  if (typeof window === "undefined") return;
+  // Lokal
+  localStorage.removeItem(LS.match(date));
+  localStorage.removeItem(LS.selection(date, "adrian"));
+  localStorage.removeItem(LS.selection(date, "janina"));
+  localStorage.removeItem(LS.shopping(date));
+  // Aus History entfernen
+  const matches = ls<MatchResult[]>("w2e_matches") ?? [];
+  lsSet("w2e_matches", matches.filter((m) => m.date !== date));
+  const ratings = ls<Record<string, unknown>>("w2e_ratings") ?? {};
+  delete ratings[date];
+  lsSet("w2e_ratings", ratings);
+
+  // Supabase
+  if (isSupabaseConfigured && supabase) {
+    await Promise.all([
+      supabase.from("match_results").delete().eq("date", date),
+      supabase.from("user_selections" as never).delete().eq("date", date),
+      supabase.from("meal_history").delete().eq("date_cooked", date),
+    ]);
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Meal history & ratings
 // ────────────────────────────────────────────────────────────────────────────
