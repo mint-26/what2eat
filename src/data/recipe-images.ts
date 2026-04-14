@@ -1,128 +1,255 @@
 /**
- * Curated Unsplash food photos, grouped by cuisine type.
- * Each recipe deterministically maps to one image based on its id,
- * so the same recipe always shows the same photo.
+ * Curated Unsplash food photos. Matching hierarchy:
+ *   1. Dish-type keyword (bowl, salat, suppe, curry, ...) — most specific
+ *   2. Main protein (lachs, garnelen, rind, ...)
+ *   3. Cuisine type
+ *   4. Generic fallback
  *
- * All URLs use Unsplash's image CDN with query params for size/quality.
+ * Each recipe maps deterministically to one image via its id,
+ * so the same recipe always shows the same photo.
  */
 
 const UNSPLASH = (id: string) =>
   `https://images.unsplash.com/${id}?w=800&h=600&fit=crop&q=80&auto=format`;
 
-// Curated photo IDs from unsplash.com (all food photography, CC0 license)
-const IMAGES_BY_CUISINE: Record<string, string[]> = {
-  Asiatisch: [
-    "photo-1569718212165-3a8278d5f624", // ramen bowl
-    "photo-1617196034796-73dfa7b1fd56", // asian noodles
-    "photo-1512058564366-18510be2db19", // sushi
-    "photo-1603133872878-684f208fb84b", // poke bowl
-    "photo-1590301157890-4810ed352733", // thai curry
-    "photo-1559314809-0d155014e29e", // stir fry
-    "photo-1563379091339-03b21ab4a4f8", // bibimbap
-    "photo-1552611052-33e04de081de", // pho
+// ── Dish-type specific (matches by keyword in tags OR meal_name) ────────────
+const IMAGES_BY_DISH: Record<string, string[]> = {
+  salat: [
+    "photo-1540189549336-e6e99c3679fe",
+    "photo-1512621776951-a57141f2eefd",
+    "photo-1546793665-c74683f339c1",
+    "photo-1607532941433-304659e8198a",
   ],
-  Mediterran: [
-    "photo-1551248429-40975aa4de74", // mediterranean plate
-    "photo-1540189549336-e6e99c3679fe", // salad
-    "photo-1574894709920-11b28e7367e3", // greek gyros
-    "photo-1544025162-d76694265947", // grilled meat
-    "photo-1565299624946-b28f40a0ae38", // pizza/flatbread
-    "photo-1608032077018-c9aad9565d29", // shakshuka
-    "photo-1512621776951-a57141f2eefd", // veggie bowl
-    "photo-1504674900247-0877df9cc836", // plated dinner
+  bowl: [
+    "photo-1546069901-ba9599a7e63c",
+    "photo-1603133872878-684f208fb84b",
+    "photo-1551504734-5ee1c4a1479b",
+    "photo-1563379091339-03b21ab4a4f8",
   ],
-  Mexikanisch: [
-    "photo-1565299585323-38d6b0865b47", // tacos
-    "photo-1551504734-5ee1c4a1479b", // burrito bowl
-    "photo-1600891964092-4316c288032e", // mexican food
-    "photo-1615870216519-2f9fa575fa5c", // enchiladas
-    "photo-1613514785940-daed07799d9b", // fajitas
-    "photo-1626700051175-6818013e1d4f", // quesadilla
+  suppe: [
+    "photo-1569718212165-3a8278d5f624",
+    "photo-1552611052-33e04de081de",
+    "photo-1547592180-85f173990554",
+    "photo-1579871494447-9811cf80d66c",
   ],
-  Indisch: [
-    "photo-1585937421612-70a008356fbe", // butter chicken
-    "photo-1565557623262-b51c2513a641", // indian curry
-    "photo-1589302168068-964664d93dc0", // biryani
-    "photo-1606491956689-2ea866880c84", // tandoori
-    "photo-1567188040759-fb8a883dc6d8", // dal
-    "photo-1631292784640-2b24be784d5d", // tikka masala
+  curry: [
+    "photo-1585937421612-70a008356fbe",
+    "photo-1565557623262-b51c2513a641",
+    "photo-1631292784640-2b24be784d5d",
+    "photo-1590301157890-4810ed352733",
   ],
-  Amerikanisch: [
-    "photo-1568901346375-23c9450c58cd", // burger
-    "photo-1546069901-ba9599a7e63c", // bowl
-    "photo-1529193591184-b1d58069ecdd", // bbq
-    "photo-1594212699903-ec8a3eca50f5", // grilled chicken
-    "photo-1598515214211-89d3c73ae83b", // american plate
-    "photo-1432139509613-5c4255815697", // steak
+  burger: [
+    "photo-1568901346375-23c9450c58cd",
+    "photo-1550547660-d9450f859349",
+    "photo-1586190848861-99aa4a171e90",
   ],
-  Deutsch: [
-    "photo-1544025162-d76694265947", // grilled meat
-    "photo-1504674900247-0877df9cc836", // plated food
-    "photo-1598103442097-8b74394b95c6", // schnitzel style
-    "photo-1559847844-5315695dadae", // meatballs
-    "photo-1607532941433-304659e8198a", // potato dish
+  steak: [
+    "photo-1432139509613-5c4255815697",
+    "photo-1558030006-450675393462",
+    "photo-1529193591184-b1d58069ecdd",
   ],
-  Türkisch: [
-    "photo-1599487488170-d11ec9c172f0", // kebab
-    "photo-1529193591184-b1d58069ecdd", // grilled meat
-    "photo-1530469912745-a215c6b256ea", // mediterranean platter
-    "photo-1574894709920-11b28e7367e3", // gyros
-    "photo-1544025162-d76694265947", // grilled
+  pasta: [
+    "photo-1565299624946-b28f40a0ae38",
+    "photo-1551183053-bf91a1d81141",
+    "photo-1621996346565-e3dbc646d9a9",
   ],
-  Orientalisch: [
-    "photo-1540189549336-e6e99c3679fe", // middle eastern
-    "photo-1550507992-eb63ffee0847", // hummus bowl
-    "photo-1601050690597-df0568f70950", // shawarma
-    "photo-1608032077018-c9aad9565d29", // shakshuka
-    "photo-1530469912745-a215c6b256ea", // platter
+  nudeln: [
+    "photo-1617196034796-73dfa7b1fd56",
+    "photo-1552611052-33e04de081de",
+    "photo-1569058242253-92a9c755a0ec",
   ],
-  Vietnamesisch: [
-    "photo-1552611052-33e04de081de", // pho
-    "photo-1583224994076-ae7a637f2337", // banh mi
-    "photo-1617196034796-73dfa7b1fd56", // noodles
-    "photo-1569058242253-92a9c755a0ec", // vietnamese spring rolls
+  wok: [
+    "photo-1559314809-0d155014e29e",
+    "photo-1617093727343-374698b1b08d",
+    "photo-1617196034796-73dfa7b1fd56",
   ],
-  Koreanisch: [
-    "photo-1498654896293-37aacf113fd9", // korean food
-    "photo-1583224964978-2257b960c3d3", // bibimbap
-    "photo-1590301157890-4810ed352733", // korean stew
-    "photo-1635363638580-c2809d049eee", // korean bbq
+  "stir-fry": [
+    "photo-1559314809-0d155014e29e",
+    "photo-1617093727343-374698b1b08d",
   ],
-  Hawaiianisch: [
-    "photo-1603133872878-684f208fb84b", // poke bowl
-    "photo-1546069901-ba9599a7e63c", // bowl
-    "photo-1563379091339-03b21ab4a4f8", // tropical bowl
+  grill: [
+    "photo-1544025162-d76694265947",
+    "photo-1558030006-450675393462",
+    "photo-1594212699903-ec8a3eca50f5",
   ],
-  Lateinamerikanisch: [
-    "photo-1515443961218-a51367888e4b", // ceviche
-    "photo-1551504734-5ee1c4a1479b", // burrito bowl
-    "photo-1600891964092-4316c288032e", // latin food
+  ofen: [
+    "photo-1598103442097-8b74394b95c6",
+    "photo-1504674900247-0877df9cc836",
   ],
-  Skandinavisch: [
-    "photo-1485921325833-c519f76c4927", // salmon
-    "photo-1467003909585-2f8a72700288", // nordic plate
-    "photo-1504674900247-0877df9cc836", // clean plate
+  wrap: [
+    "photo-1626700051175-6818013e1d4f",
+    "photo-1626700051175-6818013e1d4f",
   ],
-  Japanisch: [
-    "photo-1579871494447-9811cf80d66c", // ramen
-    "photo-1512058564366-18510be2db19", // sushi
-    "photo-1569718212165-3a8278d5f624", // donburi
+  tacos: [
+    "photo-1565299585323-38d6b0865b47",
+    "photo-1615870216519-2f9fa575fa5c",
   ],
-  Chinesisch: [
-    "photo-1559314809-0d155014e29e", // stir fry
-    "photo-1617093727343-374698b1b08d", // chinese food
+  pizza: [
+    "photo-1565299624946-b28f40a0ae38",
+    "photo-1513104890138-7c749659a591",
   ],
-  Thai: [
-    "photo-1559314809-0d155014e29e", // thai stir fry
-    "photo-1569562211093-4ed0d0758f12", // thai curry
+  reis: [
+    "photo-1603133872878-684f208fb84b",
+    "photo-1589302168068-964664d93dc0",
+    "photo-1563379091339-03b21ab4a4f8",
   ],
-  Italienisch: [
-    "photo-1565299624946-b28f40a0ae38", // pasta
-    "photo-1551183053-bf91a1d81141", // italian plate
+  poke: [
+    "photo-1603133872878-684f208fb84b",
+    "photo-1546069901-ba9599a7e63c",
+  ],
+  kebab: [
+    "photo-1599487488170-d11ec9c172f0",
+    "photo-1530469912745-a215c6b256ea",
+  ],
+  köfte: [
+    "photo-1599487488170-d11ec9c172f0",
+    "photo-1559847844-5315695dadae",
+  ],
+  köftes: [
+    "photo-1599487488170-d11ec9c172f0",
+  ],
+  schnitzel: [
+    "photo-1598103442097-8b74394b95c6",
+    "photo-1504674900247-0877df9cc836",
+  ],
+  frikadellen: [
+    "photo-1559847844-5315695dadae",
+  ],
+  shakshuka: [
+    "photo-1608032077018-c9aad9565d29",
+  ],
+  omelett: [
+    "photo-1608032077018-c9aad9565d29",
+    "photo-1525351484163-7529414344d8",
   ],
 };
 
-// Generic food photo fallbacks for any cuisine
+// ── Protein specific ────────────────────────────────────────────────────────
+const IMAGES_BY_PROTEIN: Record<string, string[]> = {
+  lachs: [
+    "photo-1485921325833-c519f76c4927",
+    "photo-1519708227418-c8fd9a32b7a2",
+    "photo-1467003909585-2f8a72700288",
+  ],
+  thunfisch: [
+    "photo-1512058564366-18510be2db19",
+    "photo-1579871494447-9811cf80d66c",
+  ],
+  garnelen: [
+    "photo-1565299624946-b28f40a0ae38",
+    "photo-1559314809-0d155014e29e",
+    "photo-1569058242253-92a9c755a0ec",
+  ],
+  fisch: [
+    "photo-1485921325833-c519f76c4927",
+    "photo-1467003909585-2f8a72700288",
+  ],
+  tofu: [
+    "photo-1546069901-ba9599a7e63c",
+    "photo-1512621776951-a57141f2eefd",
+  ],
+  linsen: [
+    "photo-1567188040759-fb8a883dc6d8",
+    "photo-1565557623262-b51c2513a641",
+  ],
+  kichererbsen: [
+    "photo-1550507992-eb63ffee0847",
+    "photo-1540189549336-e6e99c3679fe",
+  ],
+  ei: [
+    "photo-1608032077018-c9aad9565d29",
+    "photo-1525351484163-7529414344d8",
+  ],
+  eier: [
+    "photo-1608032077018-c9aad9565d29",
+  ],
+};
+
+// ── Cuisine specific (final fallback before generic) ───────────────────────
+const IMAGES_BY_CUISINE: Record<string, string[]> = {
+  Asiatisch: [
+    "photo-1569718212165-3a8278d5f624",
+    "photo-1617196034796-73dfa7b1fd56",
+    "photo-1559314809-0d155014e29e",
+    "photo-1603133872878-684f208fb84b",
+  ],
+  Mediterran: [
+    "photo-1551248429-40975aa4de74",
+    "photo-1540189549336-e6e99c3679fe",
+    "photo-1504674900247-0877df9cc836",
+  ],
+  Mexikanisch: [
+    "photo-1565299585323-38d6b0865b47",
+    "photo-1551504734-5ee1c4a1479b",
+    "photo-1615870216519-2f9fa575fa5c",
+  ],
+  Indisch: [
+    "photo-1585937421612-70a008356fbe",
+    "photo-1565557623262-b51c2513a641",
+    "photo-1589302168068-964664d93dc0",
+  ],
+  Amerikanisch: [
+    "photo-1568901346375-23c9450c58cd",
+    "photo-1432139509613-5c4255815697",
+    "photo-1594212699903-ec8a3eca50f5",
+  ],
+  Deutsch: [
+    "photo-1598103442097-8b74394b95c6",
+    "photo-1559847844-5315695dadae",
+    "photo-1607532941433-304659e8198a",
+  ],
+  Türkisch: [
+    "photo-1599487488170-d11ec9c172f0",
+    "photo-1530469912745-a215c6b256ea",
+    "photo-1574894709920-11b28e7367e3",
+  ],
+  Orientalisch: [
+    "photo-1550507992-eb63ffee0847",
+    "photo-1540189549336-e6e99c3679fe",
+    "photo-1608032077018-c9aad9565d29",
+  ],
+  Vietnamesisch: [
+    "photo-1552611052-33e04de081de",
+    "photo-1583224994076-ae7a637f2337",
+    "photo-1569058242253-92a9c755a0ec",
+  ],
+  Koreanisch: [
+    "photo-1498654896293-37aacf113fd9",
+    "photo-1583224964978-2257b960c3d3",
+    "photo-1635363638580-c2809d049eee",
+  ],
+  Japanisch: [
+    "photo-1579871494447-9811cf80d66c",
+    "photo-1512058564366-18510be2db19",
+    "photo-1569718212165-3a8278d5f624",
+  ],
+  Chinesisch: [
+    "photo-1559314809-0d155014e29e",
+    "photo-1617093727343-374698b1b08d",
+  ],
+  Thai: [
+    "photo-1559314809-0d155014e29e",
+    "photo-1569562211093-4ed0d0758f12",
+    "photo-1590301157890-4810ed352733",
+  ],
+  Italienisch: [
+    "photo-1565299624946-b28f40a0ae38",
+    "photo-1551183053-bf91a1d81141",
+  ],
+  Hawaiianisch: [
+    "photo-1603133872878-684f208fb84b",
+    "photo-1546069901-ba9599a7e63c",
+  ],
+  Lateinamerikanisch: [
+    "photo-1515443961218-a51367888e4b",
+    "photo-1551504734-5ee1c4a1479b",
+  ],
+  Skandinavisch: [
+    "photo-1485921325833-c519f76c4927",
+    "photo-1467003909585-2f8a72700288",
+  ],
+};
+
 const FALLBACKS = [
   "photo-1504674900247-0877df9cc836",
   "photo-1546069901-ba9599a7e63c",
@@ -130,13 +257,80 @@ const FALLBACKS = [
   "photo-1512621776951-a57141f2eefd",
 ];
 
+// Order matters: more specific dish-types first
+const DISH_KEYWORDS = [
+  "shakshuka",
+  "schnitzel",
+  "frikadellen",
+  "köfte",
+  "köftes",
+  "kebab",
+  "tacos",
+  "burger",
+  "pizza",
+  "poke",
+  "wrap",
+  "curry",
+  "salat",
+  "suppe",
+  "pasta",
+  "nudeln",
+  "stir-fry",
+  "wok",
+  "bowl",
+  "steak",
+  "grill",
+  "ofen",
+  "reis",
+  "omelett",
+];
+
+const PROTEIN_KEYWORDS = [
+  "lachs",
+  "thunfisch",
+  "garnelen",
+  "tofu",
+  "linsen",
+  "kichererbsen",
+  "eier",
+  "ei",
+  "fisch",
+];
+
 export function getRecipeImage(recipe: {
   id: number;
   cuisine_type: string;
+  meal_name: string;
+  tags?: string[];
 }): string {
-  const pool =
-    IMAGES_BY_CUISINE[recipe.cuisine_type] ??
-    FALLBACKS;
-  const photoId = pool[recipe.id % pool.length];
-  return UNSPLASH(photoId);
+  const haystack = (
+    recipe.meal_name +
+    " " +
+    (recipe.tags ?? []).join(" ")
+  ).toLowerCase();
+
+  // 1. Try dish-type match (most specific)
+  for (const kw of DISH_KEYWORDS) {
+    if (haystack.includes(kw)) {
+      const pool = IMAGES_BY_DISH[kw];
+      if (pool) return UNSPLASH(pool[recipe.id % pool.length]);
+    }
+  }
+
+  // 2. Try protein match
+  for (const kw of PROTEIN_KEYWORDS) {
+    if (haystack.includes(kw)) {
+      const pool = IMAGES_BY_PROTEIN[kw];
+      if (pool) return UNSPLASH(pool[recipe.id % pool.length]);
+    }
+  }
+
+  // 3. Cuisine fallback
+  const cuisinePool = IMAGES_BY_CUISINE[recipe.cuisine_type];
+  if (cuisinePool) {
+    return UNSPLASH(cuisinePool[recipe.id % cuisinePool.length]);
+  }
+
+  // 4. Generic fallback
+  return UNSPLASH(FALLBACKS[recipe.id % FALLBACKS.length]);
 }
