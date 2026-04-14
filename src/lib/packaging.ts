@@ -40,9 +40,14 @@ function parseNumber(raw: string | null | undefined): number {
   const s = String(raw).trim().replace(",", ".");
   // fraction "1/2"
   const frac = s.match(/^(\d+)\s*\/\s*(\d+)/);
-  if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
+  if (frac) {
+    const denom = parseInt(frac[2], 10);
+    if (!denom) return 0;
+    return parseInt(frac[1], 10) / denom;
+  }
   const num = s.match(/-?\d+(\.\d+)?/);
-  return num ? parseFloat(num[0]) : 0;
+  const parsed = num ? parseFloat(num[0]) : 0;
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /** Convert to base unit (g for mass, ml for volume, else piece). */

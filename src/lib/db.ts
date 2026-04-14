@@ -200,9 +200,12 @@ export async function fetchRemoteMatch(date: string): Promise<MatchResult | null
       .eq("date", date)
       .maybeSingle();
     if (error || !data) return null;
-    const m = data as MatchResult;
-    lsSet(LS.match(date), m); // cache locally
-    return m;
+    const m = data as Partial<MatchResult>;
+    // Validieren: ohne recipe_json wäre das Match ungültig (buildShoppingList würde crashen)
+    if (!m.matched_meal_name || !m.matched_recipe_json || !m.who_cooks) return null;
+    const valid = m as MatchResult;
+    lsSet(LS.match(date), valid);
+    return valid;
   } catch {
     return null;
   }

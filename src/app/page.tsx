@@ -378,11 +378,15 @@ function AppContent() {
       target.image_url
     );
 
-    // Nur für heutiges Match: Cook-Count erhöhen (nur beim ersten Bewerter)
+    // Nur für heutiges Match: Cook-Count erhöhen — nur beim ersten Bewerter.
+    // Wichtig: fresh aus localStorage lesen, nicht aus stale React-State,
+    // damit zwei parallel laufende Bewertungen nicht beide zählen.
     if (target.date === today && matchResult) {
-      const existing = history.find((h) => h.date_cooked === today);
-      const alreadyRated = existing?.rating_adrian != null || existing?.rating_janina != null;
-      if (!alreadyRated) {
+      const fresh = getMealHistory().find((h) => h.date_cooked === today);
+      const myRating = currentUser === "adrian" ? fresh?.rating_adrian : fresh?.rating_janina;
+      const partnerRating = currentUser === "adrian" ? fresh?.rating_janina : fresh?.rating_adrian;
+      // Ich hab gerade bewertet; Partner hatte vorher noch nicht bewertet → ich bin der erste
+      if (myRating != null && partnerRating == null) {
         await incrementCookCount(matchResult.who_cooks);
       }
       setMatchDismissed(true);
