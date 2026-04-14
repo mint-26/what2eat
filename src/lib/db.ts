@@ -260,6 +260,7 @@ export async function resetToday(date: string) {
       supabase.from("match_results").delete().eq("date", date),
       supabase.from("user_selections" as never).delete().eq("date", date),
       supabase.from("meal_history").delete().eq("date_cooked", date),
+      supabase.from("shopping_lists" as never).delete().eq("date", date),
     ]);
   }
 }
@@ -335,6 +336,34 @@ export function getShoppingList(date: string): ShoppingItem[] {
 
 export function saveShoppingList(date: string, items: ShoppingItem[]) {
   lsSet(LS.shopping(date), items);
+  void syncShoppingListRemote(date, items);
+}
+
+async function syncShoppingListRemote(date: string, items: ShoppingItem[]) {
+  if (!isSupabaseConfigured || !supabase) return;
+  const { error } = await supabase
+    .from("shopping_lists" as never)
+    .upsert(
+      { date, items, updated_at: new Date().toISOString() } as never,
+      { onConflict: "date" } as never
+    );
+  if (error) console.error("[syncShoppingListRemote]", error);
+}
+
+export async function fetchRemoteShoppingList(date: string): Promise<ShoppingItem[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from("shopping_lists" as never)
+      .select("items")
+      .eq("date", date)
+      .maybeSingle();
+    if (error || !data) return null;
+    const row = data as { items: ShoppingItem[] };
+    return Array.isArray(row.items) ? row.items : null;
+  } catch {
+    return null;
+  }
 }
 
 export function buildShoppingList(recipe: RecipeJSON, location?: LocationKey | null): ShoppingItem[] {

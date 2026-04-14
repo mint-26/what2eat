@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import type { ShoppingItem, UserRole } from "@/types/database";
-import { saveShoppingList, buildShoppingList, getTodaysMatch, getShoppingList } from "@/lib/db";
+import {
+  saveShoppingList,
+  buildShoppingList,
+  getTodaysMatch,
+  getShoppingList,
+  fetchRemoteShoppingList,
+} from "@/lib/db";
 import {
   LOCATIONS,
   getLocation,
@@ -38,6 +44,16 @@ const STORE_COLORS: Record<string, string> = {
 
 type GroupMode = "category" | "store";
 
+function shallowSameChecked(a: ShoppingItem[], b: ShoppingItem[]) {
+  if (a.length !== b.length) return false;
+  const bByName = new Map(b.map((i) => [i.name, i]));
+  return a.every((ai) => {
+    const bi = bByName.get(ai.name);
+    if (!bi) return false;
+    return ai.checked === bi.checked && (ai.checked_by ?? null) === (bi.checked_by ?? null);
+  });
+}
+
 export function ShoppingTab({
   items: initialItems,
   date,
@@ -62,6 +78,41 @@ export function ShoppingTab({
   useEffect(() => {
     setLoc(getLocation());
   }, []);
+
+  // Cross-device sync: pull remote list every 3s and adopt if it differs.
+  // Last-write-wins — Konflikt-Auflösung erfolgt über die Schreibreihenfolge
+  // (updated_at auf Supabase). Wichtig: wir updaten nur die State, schreiben
+  // aber NICHT zurück, sonst gibt's Schleifen.
+  useEffect(() => {
+    let cancelled = false;
+    const pull = async () => {
+      const remote = await fetchRemoteShoppingList(date);
+      if (cancelled || !remote) return;
+      setItems((prev) => {
+        if (shallowSameChecked(prev, remote)) return prev;
+        // Merge: remote ist autoritativ für checked/checked_by.
+        // Lokale Felder (package_size, store) erhalten wir, falls remote sie nicht hat.
+        const byName = new Map(prev.map((p) => [p.name, p]));
+        const merged = remote.map((r) => {
+          const local = byName.get(r.name);
+          return local ? { ...local, checked: r.checked, checked_by: r.checked_by ?? null } : r;
+        });
+        // Lokal cachen, aber nicht remote pushen
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(`w2e_shop_${date}`, JSON.stringify(merged));
+          } catch {}
+        }
+        return merged;
+      });
+    };
+    pull(); // sofort
+    const interval = setInterval(pull, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [date]);
 
   // If parent seeds a list we don't have yet (first match today), adopt it.
   useEffect(() => {
