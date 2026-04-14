@@ -73,8 +73,60 @@ const IMAGES_BY_DISH: Record<string, string[]> = {
     "photo-1594212699903-ec8a3eca50f5",
   ],
   ofen: [
-    "photo-1598103442097-8b74394b95c6",
     "photo-1504674900247-0877df9cc836",
+    "photo-1607532941433-304659e8198a",
+  ],
+  auflauf: [
+    "photo-1574484284002-952d92456975",
+    "photo-1621996346565-e3dbc646d9a9",
+    "photo-1551782450-a2132b4ba21d",
+  ],
+  überbacken: [
+    "photo-1574484284002-952d92456975",
+    "photo-1621996346565-e3dbc646d9a9",
+  ],
+  gratin: [
+    "photo-1574484284002-952d92456975",
+    "photo-1621996346565-e3dbc646d9a9",
+  ],
+  kartoffel: [
+    "photo-1574484284002-952d92456975",
+    "photo-1568600891621-50f697b9a1c7",
+  ],
+  keema: [
+    "photo-1585937421612-70a008356fbe",
+    "photo-1631292784640-2b24be784d5d",
+  ],
+  biryani: [
+    "photo-1589302168068-964664d93dc0",
+  ],
+  masala: [
+    "photo-1631292784640-2b24be784d5d",
+    "photo-1585937421612-70a008356fbe",
+  ],
+  dal: [
+    "photo-1567188040759-fb8a883dc6d8",
+  ],
+  risotto: [
+    "photo-1476124369491-e7addf5db371",
+  ],
+  eintopf: [
+    "photo-1547592180-85f173990554",
+    "photo-1569718212165-3a8278d5f624",
+  ],
+  fajita: [
+    "photo-1613514785940-daed07799d9b",
+    "photo-1600891964092-4316c288032e",
+  ],
+  enchilada: [
+    "photo-1615870216519-2f9fa575fa5c",
+  ],
+  burrito: [
+    "photo-1551504734-5ee1c4a1479b",
+    "photo-1626700051175-6818013e1d4f",
+  ],
+  quesadilla: [
+    "photo-1626700051175-6818013e1d4f",
   ],
   wrap: [
     "photo-1626700051175-6818013e1d4f",
@@ -262,6 +314,22 @@ const DISH_KEYWORDS = [
   "shakshuka",
   "schnitzel",
   "frikadellen",
+  "auflauf",
+  "überbacken",
+  "überbackene",
+  "gratin",
+  "kartoffel",
+  "biryani",
+  "keema",
+  "masala",
+  "risotto",
+  "eintopf",
+  "fajita",
+  "fajitas",
+  "enchilada",
+  "enchiladas",
+  "burrito",
+  "quesadilla",
   "köfte",
   "köftes",
   "kebab",
@@ -282,6 +350,7 @@ const DISH_KEYWORDS = [
   "grill",
   "ofen",
   "reis",
+  "dal",
   "omelett",
 ];
 
@@ -293,7 +362,6 @@ const PROTEIN_KEYWORDS = [
   "linsen",
   "kichererbsen",
   "eier",
-  "ei",
   "fisch",
 ];
 
@@ -309,9 +377,24 @@ export function getRecipeImage(recipe: {
     (recipe.tags ?? []).join(" ")
   ).toLowerCase();
 
+  // Split haystack into word-ish tokens so "ei" doesn't match "fleisch"
+  const tokens = new Set(
+    haystack
+      .split(/[^a-zäöüß-]+/)
+      .flatMap((t) => [t, ...t.split("-")])
+      .filter(Boolean)
+  );
+
+  const matches = (kw: string) => {
+    // Multi-word keyword (e.g. "stir-fry"): substring match on haystack
+    if (kw.includes("-") || kw.includes(" ")) return haystack.includes(kw);
+    // Single word: require exact token match
+    return tokens.has(kw);
+  };
+
   // 1. Try dish-type match (most specific)
   for (const kw of DISH_KEYWORDS) {
-    if (haystack.includes(kw)) {
+    if (matches(kw)) {
       const pool = IMAGES_BY_DISH[kw];
       if (pool) return UNSPLASH(pool[recipe.id % pool.length]);
     }
@@ -319,7 +402,7 @@ export function getRecipeImage(recipe: {
 
   // 2. Try protein match
   for (const kw of PROTEIN_KEYWORDS) {
-    if (haystack.includes(kw)) {
+    if (matches(kw)) {
       const pool = IMAGES_BY_PROTEIN[kw];
       if (pool) return UNSPLASH(pool[recipe.id % pool.length]);
     }
