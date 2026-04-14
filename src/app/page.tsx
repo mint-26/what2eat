@@ -15,6 +15,7 @@ import { LogoFull } from "@/components/Logo";
 import { shareRecipe } from "@/lib/share";
 import { determineMatch, assignCook } from "@/lib/match";
 import { selectDailyRecipes } from "@/data/recipes";
+import { getRecipeImage } from "@/data/recipe-images";
 import {
   getCookCounts,
   incrementCookCount,
@@ -36,25 +37,6 @@ import type {
   UserRole,
   ShoppingItem,
 } from "@/types/database";
-
-// ────────────────────────────────────────────────────────────────────────────
-// Image generation helper
-// ────────────────────────────────────────────────────────────────────────────
-
-async function fetchImage(mealName: string, ingredients: string[]): Promise<string | null> {
-  try {
-    const res = await fetch("/api/generate-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mealName, mainIngredients: ingredients }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.imageUrl ?? null;
-  } catch {
-    return null;
-  }
-}
 
 // ────────────────────────────────────────────────────────────────────────────
 // AppContent
@@ -144,26 +126,11 @@ function AppContent() {
         prep_time_minutes: s.prep_time_minutes,
         spice_level: currentUser === "adrian" ? s.spice_level_adrian : s.spice_level_janina,
         recipe_json: s.recipe,
-        meal_image_url: null,
+        meal_image_url: getRecipeImage(s),
         created_at: new Date().toISOString(),
       }));
 
       setSuggestions(mapped);
-
-      // Fire off image generation for each card in parallel (non-blocking)
-      mapped.forEach(async (s) => {
-        const ingredients =
-          s.recipe_json?.ingredients.slice(0, 5).map((ing) => ing.name) ?? [];
-
-        const imageUrl = await fetchImage(s.meal_name, ingredients);
-        if (imageUrl) {
-          setSuggestions((prev) =>
-            prev.map((p) =>
-              p.id === s.id ? { ...p, meal_image_url: imageUrl } : p
-            )
-          );
-        }
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Fehler beim Laden");
     } finally {
