@@ -885,8 +885,10 @@ export function selectDailyRecipes(
 
   if (available.length < 3) return available.slice(0, 3);
 
-  // Shuffle with seed
-  const shuffled = seededShuffle([...available], today + (userRole === "adrian" ? 0 : 7));
+  // Both partners see the SAME 3 recipes (shared seed).
+  // userRole is kept for future personalisation but currently ignored here.
+  void userRole;
+  const shuffled = seededShuffle([...available], today);
 
   // Pick 3 with diverse cuisines and proteins
   const selected: StaticRecipe[] = [];
@@ -905,15 +907,6 @@ export function selectDailyRecipes(
       usedCuisines.add(recipe.cuisine_type);
       usedMainProteins.add(mainProtein);
     }
-  }
-
-  // Ensure at least one overlapping recipe between partners (for match chance)
-  // Use the shared seed (without role offset) for the first pick
-  const sharedShuffled = seededShuffle([...available], today);
-  const sharedPick = sharedShuffled[0];
-
-  if (sharedPick && !selected.find((s) => s.id === sharedPick.id)) {
-    selected[2] = sharedPick; // Replace the 3rd pick with the shared one
   }
 
   return selected.slice(0, 3);

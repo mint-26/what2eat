@@ -109,49 +109,67 @@ export function subscribeToPartnerSelection(
   onPartnerSelected: (data: SelectionData) => void
 ): (() => void) {
   const partnerRole: UserRole = myRole === "adrian" ? "janina" : "adrian";
+  let stopped = false;
+  let fired = false;
 
-  if (!isSupabaseConfigured || !supabase) {
-    // Fallback: poll localStorage (for same-device simulation)
-    const interval = setInterval(() => {
-      const sel = getLocalSelection(date, partnerRole);
-      if (sel) {
-        clearInterval(interval);
-        onPartnerSelected(sel);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }
+  const fire = (data: SelectionData) => {
+    if (fired || stopped) return;
+    fired = true;
+    onPartnerSelected(data);
+  };
 
-  // Real Supabase Realtime subscription
-  const channel = supabase
-    .channel(`selections-${date}`)
-    .on(
-      "postgres_changes" as never,
-      {
-        event: "INSERT",
-        schema: "what2eat",
-        table: "user_selections",
-        filter: `date=eq.${date}`,
-      } as never,
-      (payload: { new: { user_role: string; meal_name: string; cuisine_type: string | null; recipe_json: RecipeJSON | null; meal_image_url: string | null } }) => {
-        if (payload.new.user_role === partnerRole) {
-          onPartnerSelected({
-            meal_name: payload.new.meal_name,
-            cuisine_type: payload.new.cuisine_type,
-            recipe_json: payload.new.recipe_json,
-            meal_image_url: payload.new.meal_image_url,
+  // Same-device fallback: localStorage polling (works for testing on one device)
+  const localInterval = setInterval(() => {
+    if (stopped || fired) return;
+    const sel = getLocalSelection(date, partnerRole);
+    if (sel) fire(sel);
+  }, 1000);
+
+  // Cross-device: poll Supabase every 2 seconds (more reliable than Realtime
+  // since Realtime requires the what2eat schema to be in supabase_realtime
+  // publication, which is often misconfigured)
+  let remoteInterval: ReturnType<typeof setInterval> | null = null;
+  if (isSupabaseConfigured && supabase) {
+    const poll = async () => {
+      if (stopped || fired || !supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from("user_selections" as never)
+          .select("meal_name, cuisine_type, recipe_json, meal_image_url")
+          .eq("date", date)
+          .eq("user_role", partnerRole)
+          .maybeSingle();
+        if (error) return;
+        if (data) {
+          const row = data as {
+            meal_name: string;
+            cuisine_type: string | null;
+            recipe_json: RecipeJSON | null;
+            meal_image_url: string | null;
+          };
+          fire({
+            meal_name: row.meal_name,
+            cuisine_type: row.cuisine_type,
+            recipe_json: row.recipe_json,
+            meal_image_url: row.meal_image_url,
             calories_adrian: null,
             calories_janina: null,
             protein_grams: null,
             spice_level: null,
           });
         }
+      } catch {
+        /* ignore network errors */
       }
-    )
-    .subscribe();
+    };
+    poll(); // immediate check
+    remoteInterval = setInterval(poll, 2000);
+  }
 
   return () => {
-    supabase?.removeChannel(channel);
+    stopped = true;
+    clearInterval(localInterval);
+    if (remoteInterval) clearInterval(remoteInterval);
   };
 }
 
