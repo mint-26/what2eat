@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-labelledby="c1-title">
+  <title id="c1-title">what2eat App Icon - Fork-Spoon 2</title>
+  <defs>
+    <linearGradient id="c1-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#242424"/>
+      <stop offset="100%" style="stop-color:#1a1a1a"/>
+    </linearGradient>
+    <linearGradient id="c1-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4a843"/>
+      <stop offset="100%" style="stop-color:#c74b3f"/>
+    </linearGradient>
+    <clipPath id="c1-round">
+      <rect width="1024" height="1024" rx="224" ry="224"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#c1-round)">
+    <rect width="1024" height="1024" fill="url(#c1-bg)"/>
+
+    <!-- The "2" formed from a fork silhouette -->
+    <g transform="translate(512, 420)">
+      <!-- Fork tines forming the top curve of the "2" -->
+      <path d="M-80,-200 C-80,-280 0,-320 60,-280 C120,-240 120,-160 60,-120 L-100,40"
+            fill="none" stroke="url(#c1-accent)" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Bottom horizontal stroke of "2" with fork handle feel -->
+      <path d="M-110,40 L100,40"
+            fill="none" stroke="url(#c1-accent)" stroke-width="48" stroke-linecap="round"/>
+      <!-- Fork tine details at top -->
+      <line x1="-30" y1="-270" x2="-30" y2="-210" stroke="#d4a843" stroke-width="12" stroke-linecap="round"/>
+      <line x1="10" y1="-280" x2="10" y2="-220" stroke="#d4a843" stroke-width="12" stroke-linecap="round"/>
+      <line x1="50" y1="-270" x2="50" y2="-210" stroke="#d4a843" stroke-width="12" stroke-linecap="round"/>
+    </g>
+
+    <!-- Wordmark "what eat" -->
+    <text x="512" y="680" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="96" font-weight="700" fill="#f5f0eb" letter-spacing="4">
+      what<tspan fill="url(#c1-accent)">2</tspan>eat
+    </text>
+
+    <!-- Subtle steam wisps -->
+    <g opacity="0.3">
+      <path d="M380,140 Q390,110 380,80 Q370,50 380,20" fill="none" stroke="#d4a843" stroke-width="6" stroke-linecap="round"/>
+      <path d="M420,150 Q430,115 420,85 Q410,50 420,15" fill="none" stroke="#c74b3f" stroke-width="6" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

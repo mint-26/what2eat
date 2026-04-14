@@ -1,0 +1,297 @@
+"use client";
+
+/**
+ * Local-first persistence layer.
+ * All data is stored in localStorage. When Supabase is configured,
+ * data is also synced to the cloud enabling real-time multi-device sync.
+ */
+
+import { supabase, isSupabaseConfigured } from "./supabase";
+import type { MatchResult, MealHistory, UserRole, RecipeJSON, ShoppingItem } from "@/types/database";
+
+// ────────────────────────────────────────────────────────────────────────────
+// Keys
+// ────────────────────────────────────────────────────────────────────────────
+
+const LS = {
+  cookCounts: "w2e_cook_counts",
+  history: "w2e_history",
+  selection: (date: string, role: UserRole) => `w2e_sel_${date}_${role}`,
+  match: (date: string) => `w2e_match_${date}`,
+  shopping: (date: string) => `w2e_shop_${date}`,
+};
+
+function ls<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = localStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function lsSet(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Cook counts
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface CookCounts {
+  adrian: number;
+  janina: number;
+}
+
+export function getCookCounts(): CookCounts {
+  return ls<CookCounts>(LS.cookCounts) ?? { adrian: 0, janina: 0 };
+}
+
+export async function incrementCookCount(role: UserRole) {
+  const counts = getCookCounts();
+  counts[role] += 1;
+  lsSet(LS.cookCounts, counts);
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase
+      .from("profiles")
+      .update({ cook_count: counts[role] } as never)
+      .eq("role", role);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Selection (today's meal choice per user)
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface SelectionData {
+  meal_name: string;
+  cuisine_type: string | null;
+  recipe_json: RecipeJSON | null;
+  meal_image_url: string | null;
+  calories_adrian: number | null;
+  calories_janina: number | null;
+  protein_grams: number | null;
+  spice_level: number | null;
+}
+
+export function getLocalSelection(date: string, role: UserRole): SelectionData | null {
+  return ls<SelectionData>(LS.selection(date, role));
+}
+
+export async function saveSelection(date: string, role: UserRole, data: SelectionData) {
+  lsSet(LS.selection(date, role), data);
+
+  if (isSupabaseConfigured && supabase) {
+    // Upsert into user_selections (simplified schema with full meal data)
+    await supabase.from("user_selections" as never).upsert({
+      date,
+      user_role: role,
+      meal_name: data.meal_name,
+      cuisine_type: data.cuisine_type,
+      recipe_json: data.recipe_json,
+      meal_image_url: data.meal_image_url,
+    } as never);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Real-time partner selection subscription
+// ────────────────────────────────────────────────────────────────────────────
+
+export function subscribeToPartnerSelection(
+  date: string,
+  myRole: UserRole,
+  onPartnerSelected: (data: SelectionData) => void
+): (() => void) {
+  const partnerRole: UserRole = myRole === "adrian" ? "janina" : "adrian";
+
+  if (!isSupabaseConfigured || !supabase) {
+    // Fallback: poll localStorage (for same-device simulation)
+    const interval = setInterval(() => {
+      const sel = getLocalSelection(date, partnerRole);
+      if (sel) {
+        clearInterval(interval);
+        onPartnerSelected(sel);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }
+
+  // Real Supabase Realtime subscription
+  const channel = supabase
+    .channel(`selections-${date}`)
+    .on(
+      "postgres_changes" as never,
+      {
+        event: "INSERT",
+        schema: "what2eat",
+        table: "user_selections",
+        filter: `date=eq.${date}`,
+      } as never,
+      (payload: { new: { user_role: string; meal_name: string; cuisine_type: string | null; recipe_json: RecipeJSON | null; meal_image_url: string | null } }) => {
+        if (payload.new.user_role === partnerRole) {
+          onPartnerSelected({
+            meal_name: payload.new.meal_name,
+            cuisine_type: payload.new.cuisine_type,
+            recipe_json: payload.new.recipe_json,
+            meal_image_url: payload.new.meal_image_url,
+            calories_adrian: null,
+            calories_janina: null,
+            protein_grams: null,
+            spice_level: null,
+          });
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase?.removeChannel(channel);
+  };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Match results
+// ────────────────────────────────────────────────────────────────────────────
+
+export function getTodaysMatch(date: string): MatchResult | null {
+  return ls<MatchResult>(LS.match(date));
+}
+
+export async function saveMatchResult(match: MatchResult) {
+  lsSet(LS.match(match.date), match);
+
+  // Also add to history
+  const existing = ls<MatchResult[]>("w2e_matches") ?? [];
+  const withoutToday = existing.filter((m) => m.date !== match.date);
+  lsSet("w2e_matches", [match, ...withoutToday].slice(0, 90)); // keep 90 days
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from("match_results").upsert({
+      date: match.date,
+      matched_meal_name: match.matched_meal_name,
+      matched_recipe_json: match.matched_recipe_json as never,
+      matched_image_url: match.matched_image_url,
+      who_cooks: match.who_cooks,
+      match_type: match.match_type,
+    } as never);
+  }
+}
+
+export function getAllMatches(): MatchResult[] {
+  return ls<MatchResult[]>("w2e_matches") ?? [];
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Meal history & ratings
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface HistoryEntry extends MealHistory {
+  who_cooked?: UserRole;
+  match_type?: string;
+}
+
+export function getMealHistory(): HistoryEntry[] {
+  const matches = getAllMatches();
+  const ratings = ls<Record<string, { rating_adrian: number | null; rating_janina: number | null; would_repeat: boolean }>>( "w2e_ratings") ?? {};
+
+  return matches.map((m) => ({
+    id: m.id,
+    meal_name: m.matched_meal_name,
+    date_cooked: m.date,
+    image_url: m.matched_image_url,
+    would_repeat: ratings[m.date]?.would_repeat ?? true,
+    rating_adrian: ratings[m.date]?.rating_adrian ?? null,
+    rating_janina: ratings[m.date]?.rating_janina ?? null,
+    who_cooked: m.who_cooks,
+    match_type: m.match_type,
+  }));
+}
+
+export async function saveRating(
+  date: string,
+  mealName: string,
+  role: UserRole,
+  rating: number,
+  wouldRepeat: boolean,
+  imageUrl?: string | null
+) {
+  const ratings = ls<Record<string, { rating_adrian: number | null; rating_janina: number | null; would_repeat: boolean }>>("w2e_ratings") ?? {};
+
+  ratings[date] = {
+    ...ratings[date],
+    rating_adrian: role === "adrian" ? rating : (ratings[date]?.rating_adrian ?? null),
+    rating_janina: role === "janina" ? rating : (ratings[date]?.rating_janina ?? null),
+    would_repeat: wouldRepeat,
+  };
+  lsSet("w2e_ratings", ratings);
+
+  if (isSupabaseConfigured && supabase) {
+    const updateField = role === "adrian" ? "rating_adrian" : "rating_janina";
+    await supabase
+      .from("meal_history")
+      .upsert({
+        meal_name: mealName,
+        date_cooked: date,
+        [updateField]: rating,
+        would_repeat: wouldRepeat,
+        image_url: imageUrl ?? null,
+      } as never);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Shopping list
+// ────────────────────────────────────────────────────────────────────────────
+
+export function getShoppingList(date: string): ShoppingItem[] {
+  return ls<ShoppingItem[]>(LS.shopping(date)) ?? [];
+}
+
+export function saveShoppingList(date: string, items: ShoppingItem[]) {
+  lsSet(LS.shopping(date), items);
+}
+
+export function buildShoppingList(recipe: RecipeJSON): ShoppingItem[] {
+  return recipe.ingredients.map((ing) => {
+    // Combine amounts: show both portions
+    const amtA = ing.amount_adrian ? `A: ${ing.amount_adrian}${ing.unit}` : "";
+    const amtJ = ing.amount_janina ? `J: ${ing.amount_janina}${ing.unit}` : "";
+    const combined = [amtA, amtJ].filter(Boolean).join(" / ");
+
+    return {
+      name: ing.name,
+      amount: combined,
+      unit: ing.unit,
+      category: ing.category,
+      checked: false,
+    };
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Recent meal names for prompt personalization
+// ────────────────────────────────────────────────────────────────────────────
+
+export function getRecentMealHistory(days = 14): MealHistory[] {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().split("T")[0];
+
+  return getMealHistory()
+    .filter((h) => h.date_cooked >= cutoffStr)
+    .map((h) => ({
+      id: h.id,
+      meal_name: h.meal_name,
+      date_cooked: h.date_cooked,
+      rating_adrian: h.rating_adrian,
+      rating_janina: h.rating_janina,
+      would_repeat: h.would_repeat,
+      image_url: h.image_url,
+    }));
+}

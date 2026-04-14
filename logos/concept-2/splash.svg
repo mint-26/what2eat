@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 393 852" width="393" height="852" role="img" aria-labelledby="c2s-title">
+  <title id="c2s-title">what2eat Splash - Overlapping Plates</title>
+  <defs>
+    <linearGradient id="c2s-bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#222222"/>
+      <stop offset="100%" style="stop-color:#1a1a1a"/>
+    </linearGradient>
+    <radialGradient id="c2s-glow" cx="50%" cy="42%" r="35%">
+      <stop offset="0%" style="stop-color:#c74b3f;stop-opacity:0.06"/>
+      <stop offset="50%" style="stop-color:#d4a843;stop-opacity:0.04"/>
+      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="393" height="852" fill="url(#c2s-bg)"/>
+  <rect width="393" height="852" fill="url(#c2s-glow)"/>
+
+  <!-- Overlapping plates centered -->
+  <g transform="translate(196, 360)">
+    <circle cx="-50" cy="0" r="100" fill="none" stroke="#c74b3f" stroke-width="5" opacity="0.9"/>
+    <circle cx="-50" cy="0" r="100" fill="#c74b3f" opacity="0.06"/>
+    <circle cx="50" cy="0" r="100" fill="none" stroke="#d4a843" stroke-width="5" opacity="0.9"/>
+    <circle cx="50" cy="0" r="100" fill="#d4a843" opacity="0.06"/>
+
+    <!-- Heart in overlap -->
+    <path d="M0,-14 C-5,-22 -18,-22 -18,-11 C-18,-1 0,12 0,12 C0,12 18,-1 18,-11 C18,-22 5,-22 0,-14Z"
+          fill="#c47a5a" opacity="0.8"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="196" y="510" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="48" font-weight="600" fill="#f5f0eb" letter-spacing="1">
+    what<tspan fill="#c74b3f" font-weight="700">2</tspan>eat
+  </text>
+
+  <text x="196" y="546" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="14" fill="#6b6560" letter-spacing="4">
+    GEMEINSAM GENIESSEN
+  </text>
+</svg>

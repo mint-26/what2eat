@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56" width="280" height="56">
+  <g transform="translate(22, 30)">
+    <path d="M-14,2 Q-14,16 0,17 Q14,16 14,2" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <path d="M-16,2 L16,2" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <path d="M-3,-6 C-3,-11 2,-11 2,-16" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <path d="M5,-4 C5,-8 8,-9 8,-13" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+  </g>
+  <text x="50" y="37" font-family="'DM Sans', sans-serif" font-size="28" font-weight="300" fill="#ffffff" letter-spacing="0.5">what</text>
+  <text x="118" y="37" font-family="'Playfair Display', Georgia, serif" font-size="31" font-weight="700" fill="#ffffff">2</text>
+  <text x="138" y="37" font-family="'DM Sans', sans-serif" font-size="28" font-weight="300" fill="#ffffff" letter-spacing="0.5">eat</text>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56" width="280" height="56" role="img" aria-labelledby="c2h-title">
+  <title id="c2h-title">what2eat Header - Overlapping Plates</title>
+
+  <!-- Two small overlapping circles -->
+  <circle cx="20" cy="28" r="16" fill="none" stroke="#c74b3f" stroke-width="2.5" opacity="0.9"/>
+  <circle cx="34" cy="28" r="16" fill="none" stroke="#d4a843" stroke-width="2.5" opacity="0.9"/>
+  <!-- Overlap glow -->
+  <ellipse cx="27" cy="28" rx="6" ry="10" fill="#c47a5a" opacity="0.2"/>
+
+  <!-- Wordmark -->
+  <text x="62" y="37" font-family="'Playfair Display', Georgia, serif" font-size="28" font-weight="600" fill="#f5f0eb" letter-spacing="0.5">
+    what<tspan fill="#c74b3f" font-weight="700">2</tspan>eat
+  </text>
+</svg>

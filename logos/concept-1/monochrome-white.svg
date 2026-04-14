@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56" width="280" height="56">
+  <g transform="translate(24, 28) scale(0.28)">
+    <path d="M-80,-200 C-80,-280 0,-320 60,-280 C120,-240 120,-160 60,-120 L-100,40"
+          fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M-110,40 L100,40"
+          fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round"/>
+    <line x1="-30" y1="-270" x2="-30" y2="-210" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+    <line x1="10" y1="-280" x2="10" y2="-220" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+    <line x1="50" y1="-270" x2="50" y2="-210" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  <text x="62" y="38" font-family="'DM Sans', sans-serif" font-size="30" font-weight="700" fill="#ffffff" letter-spacing="1">what2eat</text>
+</svg>

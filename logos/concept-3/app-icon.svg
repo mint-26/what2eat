@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-labelledby="c3-title">
+  <title id="c3-title">what2eat App Icon - Bowl with Chopsticks</title>
+  <defs>
+    <linearGradient id="c3-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#242424"/>
+      <stop offset="100%" style="stop-color:#1a1a1a"/>
+    </linearGradient>
+    <linearGradient id="c3-bowl" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c47a5a"/>
+      <stop offset="100%" style="stop-color:#c74b3f"/>
+    </linearGradient>
+    <linearGradient id="c3-gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#d4a843"/>
+      <stop offset="100%" style="stop-color:#e8c05a"/>
+    </linearGradient>
+    <clipPath id="c3-round">
+      <rect width="1024" height="1024" rx="224" ry="224"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#c3-round)">
+    <rect width="1024" height="1024" fill="url(#c3-bg)"/>
+
+    <!-- Minimalist bowl -->
+    <g transform="translate(512, 370)">
+      <!-- Bowl body - clean arc -->
+      <path d="M-140,20 Q-140,130 0,140 Q140,130 140,20"
+            fill="none" stroke="url(#c3-bowl)" stroke-width="14" stroke-linecap="round"/>
+
+      <!-- Bowl rim -->
+      <path d="M-160,20 L160,20"
+            fill="none" stroke="url(#c3-bowl)" stroke-width="14" stroke-linecap="round"/>
+
+      <!-- Steam lines - organic curves -->
+      <path d="M-40,-30 C-40,-55 -25,-55 -25,-80 C-25,-105 -40,-105 -40,-130"
+            fill="none" stroke="#d4a843" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
+      <path d="M15,-25 C15,-50 30,-50 30,-75 C30,-100 15,-100 15,-125"
+            fill="none" stroke="#d4a843" stroke-width="7" stroke-linecap="round" opacity="0.35"/>
+      <path d="M60,-20 C60,-40 70,-45 70,-65 C70,-85 60,-85 60,-105"
+            fill="none" stroke="#d4a843" stroke-width="5" stroke-linecap="round" opacity="0.25"/>
+    </g>
+
+    <!-- Wordmark with prominent "2" -->
+    <text x="512" y="660" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="100" font-weight="300" fill="#a89f95" letter-spacing="3">
+      what</text>
+    <text x="572" y="660" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="112" font-weight="700" fill="url(#c3-gold)">
+      2</text>
+    <text x="665" y="660" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="100" font-weight="300" fill="#a89f95" letter-spacing="3">
+      eat</text>
+  </g>
+</svg>
