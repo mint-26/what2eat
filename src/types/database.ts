@@ -109,6 +109,12 @@ export interface ShoppingItem {
   category: string;
   checked: boolean;
   image_url?: string;
+  /** Aufgerundete Paketgröße für den Einkauf, z.B. "500g" oder "2× 500g (1000g)". */
+  package_size?: string | null;
+  /** Zusatz-Info, z.B. "benötigt: 340g". */
+  package_note?: string | null;
+  /** Empfohlener Laden basierend auf Standort. */
+  store?: string | null;
 }
 
 // Supabase Database type (simplified for what2eat schema)

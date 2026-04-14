@@ -8,6 +8,7 @@
 
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { MatchResult, MealHistory, UserRole, RecipeJSON, ShoppingItem } from "@/types/database";
+import { roundToPackage, recommendStore, LOCATIONS, type LocationKey } from "./packaging";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Keys
@@ -290,12 +291,16 @@ export function saveShoppingList(date: string, items: ShoppingItem[]) {
   lsSet(LS.shopping(date), items);
 }
 
-export function buildShoppingList(recipe: RecipeJSON): ShoppingItem[] {
+export function buildShoppingList(recipe: RecipeJSON, location?: LocationKey | null): ShoppingItem[] {
+  const available = location ? LOCATIONS[location].stores : null;
+
   return recipe.ingredients.map((ing) => {
-    // Combine amounts: show both portions
     const amtA = ing.amount_adrian ? `A: ${ing.amount_adrian}${ing.unit}` : "";
     const amtJ = ing.amount_janina ? `J: ${ing.amount_janina}${ing.unit}` : "";
     const combined = [amtA, amtJ].filter(Boolean).join(" / ");
+
+    const pack = roundToPackage(ing);
+    const store = available ? recommendStore(ing.name, ing.category, available) : null;
 
     return {
       name: ing.name,
@@ -303,6 +308,9 @@ export function buildShoppingList(recipe: RecipeJSON): ShoppingItem[] {
       unit: ing.unit,
       category: ing.category,
       checked: false,
+      package_size: pack.display,
+      package_note: pack.packageSize,
+      store,
     };
   });
 }

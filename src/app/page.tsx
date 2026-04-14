@@ -16,6 +16,7 @@ import { shareRecipe } from "@/lib/share";
 import { determineMatch, assignCook } from "@/lib/match";
 import { selectDailyRecipes } from "@/data/recipes";
 import { getRecipeImage } from "@/data/recipe-images";
+import { getLocation } from "@/lib/packaging";
 import {
   getCookCounts,
   incrementCookCount,
@@ -133,7 +134,7 @@ function AppContent() {
     if (todaysMatch) {
       setMatchResult(todaysMatch);
       if (!savedShopping.length && todaysMatch.matched_recipe_json) {
-        const items = buildShoppingList(todaysMatch.matched_recipe_json);
+        const items = buildShoppingList(todaysMatch.matched_recipe_json, getLocation());
         setShoppingItems(items);
         setShoppingMealName(todaysMatch.matched_meal_name);
         saveShoppingList(today, items);
@@ -258,7 +259,7 @@ function AppContent() {
 
       // Build shopping list
       if (match.matched_recipe_json) {
-        const items = buildShoppingList(match.matched_recipe_json);
+        const items = buildShoppingList(match.matched_recipe_json, getLocation());
         setShoppingItems(items);
         setShoppingMealName(match.matched_meal_name);
         saveShoppingList(today, items);

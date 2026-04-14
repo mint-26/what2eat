@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import type { ShoppingItem } from "@/types/database";
-import { saveShoppingList } from "@/lib/db";
+import { saveShoppingList, buildShoppingList, getTodaysMatch } from "@/lib/db";
+import {
+  LOCATIONS,
+  getLocation,
+  setLocation,
+  type LocationKey,
+} from "@/lib/packaging";
 
 const CATEGORY_ORDER = [
   "Fleisch/Fisch",
@@ -23,6 +29,15 @@ const CATEGORY_ICONS: Record<string, string> = {
   "Sonstiges": "🛒",
 };
 
+const STORE_COLORS: Record<string, string> = {
+  Aldi: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  Lidl: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  Rewe: "bg-red-500/20 text-red-300 border-red-500/30",
+  Edeka: "bg-amber-500/20 text-amber-200 border-amber-500/30",
+};
+
+type GroupMode = "category" | "store";
+
 export function ShoppingTab({
   items: initialItems,
   date,
@@ -33,11 +48,35 @@ export function ShoppingTab({
   mealName?: string | null;
 }) {
   const [items, setItems] = useState<ShoppingItem[]>(initialItems);
+  const [location, setLoc] = useState<LocationKey | null>(null);
+  const [groupMode, setGroupMode] = useState<GroupMode>("store");
 
-  // Sync when parent updates (e.g., after match result)
+  // Hydrate location from localStorage
+  useEffect(() => {
+    setLoc(getLocation());
+  }, []);
+
+  // Sync when parent updates
   useEffect(() => {
     setItems(initialItems);
   }, [initialItems]);
+
+  // When location is picked, rebuild items with store assignments
+  function pickLocation(key: LocationKey) {
+    setLocation(key);
+    setLoc(key);
+    // Rebuild list with store info from current match
+    const match = getTodaysMatch(date);
+    if (match?.matched_recipe_json) {
+      const rebuilt = buildShoppingList(match.matched_recipe_json, key).map((newItem) => {
+        // Preserve checked state from existing items
+        const prev = items.find((i) => i.name === newItem.name);
+        return prev ? { ...newItem, checked: prev.checked } : newItem;
+      });
+      setItems(rebuilt);
+      saveShoppingList(date, rebuilt);
+    }
+  }
 
   function toggle(index: number) {
     const updated = items.map((item, i) =>
@@ -66,19 +105,68 @@ export function ShoppingTab({
     );
   }
 
-  // Group by category
+  // ── Location picker ────────────────────────────────────────────────────────
+  if (!location) {
+    return (
+      <div className="px-5 pt-6 pb-6">
+        <div className="mb-5">
+          <h2 className="font-display text-xl font-semibold text-text-primary mb-1">
+            Wo seid ihr heute?
+          </h2>
+          <p className="text-sm text-text-muted">
+            Damit wir wissen, welche Supermärkte verfügbar sind.
+          </p>
+        </div>
+        <div className="space-y-3">
+          {Object.values(LOCATIONS).map((loc) => (
+            <motion.button
+              key={loc.key}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => pickLocation(loc.key)}
+              className="w-full bg-bg-card hover:bg-bg-elevated rounded-2xl p-4 text-left transition-colors"
+            >
+              <div className="font-semibold text-text-primary mb-1">{loc.label}</div>
+              <div className="flex gap-2 flex-wrap">
+                {loc.stores.map((s) => (
+                  <span
+                    key={s}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border ${STORE_COLORS[s]}`}
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const locInfo = LOCATIONS[location];
+
+  // ── Grouping ──────────────────────────────────────────────────────────────
   const grouped: Record<string, { item: ShoppingItem; index: number }[]> = {};
   items.forEach((item, index) => {
-    const cat = item.category || "Sonstiges";
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push({ item, index });
+    const key =
+      groupMode === "store"
+        ? item.store || "Sonstige"
+        : item.category || "Sonstiges";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push({ item, index });
   });
 
-  const sortedCategories = Object.keys(grouped).sort(
-    (a, b) =>
-      (CATEGORY_ORDER.indexOf(a) === -1 ? 99 : CATEGORY_ORDER.indexOf(a)) -
-      (CATEGORY_ORDER.indexOf(b) === -1 ? 99 : CATEGORY_ORDER.indexOf(b))
-  );
+  const sortedGroups =
+    groupMode === "store"
+      ? Object.keys(grouped).sort((a, b) => {
+          const order = [...locInfo.stores, "Sonstige"];
+          return order.indexOf(a) - order.indexOf(b);
+        })
+      : Object.keys(grouped).sort(
+          (a, b) =>
+            (CATEGORY_ORDER.indexOf(a) === -1 ? 99 : CATEGORY_ORDER.indexOf(a)) -
+            (CATEGORY_ORDER.indexOf(b) === -1 ? 99 : CATEGORY_ORDER.indexOf(b))
+        );
 
   const checkedCount = items.filter((i) => i.checked).length;
   const progress = items.length > 0 ? checkedCount / items.length : 0;
@@ -87,11 +175,40 @@ export function ShoppingTab({
     <div className="px-5 pt-4 pb-6">
       {/* Header */}
       {mealName && (
-        <div className="mb-4">
+        <div className="mb-3">
           <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Für heute</p>
           <h2 className="font-display text-lg font-semibold text-text-primary">{mealName}</h2>
         </div>
       )}
+
+      {/* Location + group mode toggle */}
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <button
+          onClick={() => setLoc(null)}
+          className="text-xs text-text-muted flex items-center gap-1.5"
+        >
+          <span>📍</span>
+          <span className="underline decoration-dotted">{locInfo.label}</span>
+        </button>
+        <div className="flex gap-1 bg-bg-card rounded-full p-0.5">
+          <button
+            onClick={() => setGroupMode("store")}
+            className={`text-[10px] px-3 py-1 rounded-full transition-colors ${
+              groupMode === "store" ? "bg-accent-gold text-bg-primary" : "text-text-muted"
+            }`}
+          >
+            Nach Laden
+          </button>
+          <button
+            onClick={() => setGroupMode("category")}
+            className={`text-[10px] px-3 py-1 rounded-full transition-colors ${
+              groupMode === "category" ? "bg-accent-gold text-bg-primary" : "text-text-muted"
+            }`}
+          >
+            Nach Kategorie
+          </button>
+        </div>
+      </div>
 
       {/* Progress bar */}
       <div className="mb-5">
@@ -112,56 +229,86 @@ export function ShoppingTab({
         </div>
       </div>
 
-      {/* Categories */}
+      {/* Groups */}
       <div className="space-y-5">
-        {sortedCategories.map((cat) => (
-          <div key={cat}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-base">{CATEGORY_ICONS[cat] ?? "📦"}</span>
-              <span className="text-xs text-text-muted uppercase tracking-wider">{cat}</span>
-            </div>
+        {sortedGroups.map((grp) => {
+          const isStore = groupMode === "store";
+          const icon = isStore ? "🛒" : CATEGORY_ICONS[grp] ?? "📦";
+          const labelClass = isStore
+            ? `text-xs px-2 py-0.5 rounded-full border ${STORE_COLORS[grp] ?? "bg-bg-card text-text-muted border-white/10"}`
+            : "text-xs text-text-muted uppercase tracking-wider";
 
-            <div className="space-y-2">
-              {grouped[cat].map(({ item, index }) => (
-                <motion.button
-                  key={`${item.name}-${index}`}
-                  onClick={() => toggle(index)}
-                  whileTap={{ scale: 0.98 }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
-                    item.checked ? "bg-bg-elevated opacity-50" : "bg-bg-card"
-                  }`}
-                >
-                  <span
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                      item.checked
-                        ? "border-accent-green bg-accent-green"
-                        : "border-white/20"
+          return (
+            <div key={grp}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">{icon}</span>
+                <span className={labelClass}>{grp}</span>
+                <span className="text-[10px] text-text-muted">({grouped[grp].length})</span>
+              </div>
+
+              <div className="space-y-2">
+                {grouped[grp].map(({ item, index }) => (
+                  <motion.button
+                    key={`${item.name}-${index}`}
+                    onClick={() => toggle(index)}
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full flex items-start gap-3 p-3 rounded-xl transition-colors text-left ${
+                      item.checked ? "bg-bg-elevated opacity-50" : "bg-bg-card"
                     }`}
                   >
-                    {item.checked && (
-                      <span className="text-bg-primary text-xs font-bold">✓</span>
-                    )}
-                  </span>
+                    <span
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                        item.checked
+                          ? "border-accent-green bg-accent-green"
+                          : "border-white/20"
+                      }`}
+                    >
+                      {item.checked && (
+                        <span className="text-bg-primary text-xs font-bold">✓</span>
+                      )}
+                    </span>
 
-                  <span
-                    className={`flex-1 text-sm transition-colors ${
-                      item.checked
-                        ? "line-through text-text-muted"
-                        : "text-text-primary"
-                    }`}
-                  >
-                    {item.name}
-                  </span>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-sm transition-colors ${
+                          item.checked
+                            ? "line-through text-text-muted"
+                            : "text-text-primary"
+                        }`}
+                      >
+                        {item.name}
+                      </div>
+                      {item.package_note && (
+                        <div className="text-[10px] text-text-muted mt-0.5">
+                          {item.package_note}
+                        </div>
+                      )}
+                    </div>
 
-                  <span className="text-xs text-text-muted shrink-0 text-right max-w-[90px] leading-tight">
-                    {item.amount}
-                  </span>
-                </motion.button>
-              ))}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-xs text-text-primary font-medium">
+                        {item.package_size || item.amount}
+                      </span>
+                      {!isStore && item.store && (
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded-full border ${STORE_COLORS[item.store] ?? ""}`}
+                        >
+                          {item.store}
+                        </span>
+                      )}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      <p className="text-[10px] text-text-muted text-center mt-6 px-4 leading-relaxed">
+        Laden-Empfehlung basiert auf typischer Preis-Positionierung der Ketten —
+        keine Live-Prospekte.
+      </p>
 
       {checkedCount === items.length && items.length > 0 && (
         <motion.div
