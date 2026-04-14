@@ -39,6 +39,49 @@ import type {
 } from "@/types/database";
 
 // ────────────────────────────────────────────────────────────────────────────
+// Pexels image fetch with localStorage cache
+// ────────────────────────────────────────────────────────────────────────────
+
+const IMG_CACHE_KEY = "what2eat_img_cache";
+
+function getCachedImage(mealName: string): string | null {
+  try {
+    const raw = localStorage.getItem(IMG_CACHE_KEY);
+    if (!raw) return null;
+    const cache = JSON.parse(raw) as Record<string, string>;
+    return cache[mealName] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedImage(mealName: string, url: string) {
+  try {
+    const raw = localStorage.getItem(IMG_CACHE_KEY);
+    const cache = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    cache[mealName] = url;
+    localStorage.setItem(IMG_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    /* ignore */
+  }
+}
+
+async function fetchPexelsImage(query: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/recipe-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.imageUrl ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // AppContent
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -126,11 +169,23 @@ function AppContent() {
         prep_time_minutes: s.prep_time_minutes,
         spice_level: currentUser === "adrian" ? s.spice_level_adrian : s.spice_level_janina,
         recipe_json: s.recipe,
-        meal_image_url: getRecipeImage(s),
+        // Prefer cached Pexels image, fall back to curated Unsplash
+        meal_image_url: getCachedImage(s.meal_name) ?? getRecipeImage(s),
         created_at: new Date().toISOString(),
       }));
 
       setSuggestions(mapped);
+
+      // Fetch real Pexels images in parallel (only for those not yet cached)
+      picks.forEach(async (recipe, i) => {
+        if (getCachedImage(recipe.meal_name)) return;
+        const url = await fetchPexelsImage(recipe.meal_name);
+        if (!url) return;
+        setCachedImage(recipe.meal_name, url);
+        setSuggestions((prev) =>
+          prev.map((p, idx) => (idx === i ? { ...p, meal_image_url: url } : p))
+        );
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Fehler beim Laden");
     } finally {
