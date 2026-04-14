@@ -87,15 +87,23 @@ export async function saveSelection(date: string, role: UserRole, data: Selectio
   lsSet(LS.selection(date, role), data);
 
   if (isSupabaseConfigured && supabase) {
-    // Upsert into user_selections (simplified schema with full meal data)
-    await supabase.from("user_selections" as never).upsert({
-      date,
-      user_role: role,
-      meal_name: data.meal_name,
-      cuisine_type: data.cuisine_type,
-      recipe_json: data.recipe_json,
-      meal_image_url: data.meal_image_url,
-    } as never);
+    // Upsert into user_selections; conflict on (date, user_role) unique constraint.
+    const { error } = await supabase
+      .from("user_selections" as never)
+      .upsert(
+        {
+          date,
+          user_role: role,
+          meal_name: data.meal_name,
+          cuisine_type: data.cuisine_type,
+          recipe_json: data.recipe_json,
+          meal_image_url: data.meal_image_url,
+        } as never,
+        { onConflict: "date,user_role" } as never
+      );
+    if (error) {
+      console.error("[saveSelection] Supabase error:", error);
+    }
   }
 }
 
@@ -190,14 +198,18 @@ export async function saveMatchResult(match: MatchResult) {
   lsSet("w2e_matches", [match, ...withoutToday].slice(0, 90)); // keep 90 days
 
   if (isSupabaseConfigured && supabase) {
-    await supabase.from("match_results").upsert({
-      date: match.date,
-      matched_meal_name: match.matched_meal_name,
-      matched_recipe_json: match.matched_recipe_json as never,
-      matched_image_url: match.matched_image_url,
-      who_cooks: match.who_cooks,
-      match_type: match.match_type,
-    } as never);
+    const { error } = await supabase.from("match_results").upsert(
+      {
+        date: match.date,
+        matched_meal_name: match.matched_meal_name,
+        matched_recipe_json: match.matched_recipe_json as never,
+        matched_image_url: match.matched_image_url,
+        who_cooks: match.who_cooks,
+        match_type: match.match_type,
+      } as never,
+      { onConflict: "date" } as never
+    );
+    if (error) console.error("[saveMatchResult] Supabase error:", error);
   }
 }
 
@@ -253,13 +265,16 @@ export async function saveRating(
     const updateField = role === "adrian" ? "rating_adrian" : "rating_janina";
     await supabase
       .from("meal_history")
-      .upsert({
-        meal_name: mealName,
-        date_cooked: date,
-        [updateField]: rating,
-        would_repeat: wouldRepeat,
-        image_url: imageUrl ?? null,
-      } as never);
+      .upsert(
+        {
+          meal_name: mealName,
+          date_cooked: date,
+          [updateField]: rating,
+          would_repeat: wouldRepeat,
+          image_url: imageUrl ?? null,
+        } as never,
+        { onConflict: "date_cooked" } as never
+      );
   }
 }
 
