@@ -190,6 +190,24 @@ export function getTodaysMatch(date: string): MatchResult | null {
   return ls<MatchResult>(LS.match(date));
 }
 
+/** Poll Supabase for today's match (used during mismatch negotiation on the other device). */
+export async function fetchRemoteMatch(date: string): Promise<MatchResult | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from("match_results")
+      .select("id, date, matched_meal_name, matched_recipe_json, matched_image_url, who_cooks, match_type, created_at")
+      .eq("date", date)
+      .maybeSingle();
+    if (error || !data) return null;
+    const m = data as MatchResult;
+    lsSet(LS.match(date), m); // cache locally
+    return m;
+  } catch {
+    return null;
+  }
+}
+
 export async function saveMatchResult(match: MatchResult) {
   lsSet(LS.match(match.date), match);
 

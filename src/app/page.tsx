@@ -13,7 +13,7 @@ import { ShoppingTab } from "@/components/ShoppingTab";
 import { RatingOverlay } from "@/components/RatingOverlay";
 import { LogoFull } from "@/components/Logo";
 import { shareRecipe } from "@/lib/share";
-import { determineMatch, assignCook } from "@/lib/match";
+import { assignCook } from "@/lib/match";
 import { selectDailyRecipes } from "@/data/recipes";
 import { getRecipeImage } from "@/data/recipe-images";
 import { getLocation } from "@/lib/packaging";
@@ -23,6 +23,7 @@ import {
   saveSelection,
   subscribeToPartnerSelection,
   getTodaysMatch,
+  fetchRemoteMatch,
   saveMatchResult,
   getMealHistory,
   saveRating,
@@ -99,6 +100,10 @@ function AppContent() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [partnerSelected, setPartnerSelected] = useState(false);
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
+  const [pendingPicks, setPendingPicks] = useState<{
+    adrian: DailySuggestion;
+    janina: DailySuggestion;
+  } | null>(null);
 
   // Views
   const [showRecipe, setShowRecipe] = useState(false);
@@ -204,6 +209,59 @@ function AppContent() {
     }
   }, [currentUser, generateSuggestions, suggestions.length, today]);
 
+  // ── Match finalization (used for both exact + mismatch-resolution) ──────
+
+  const finalizeMatch = useCallback(
+    (chosen: DailySuggestion) => {
+      const counts = getCookCounts();
+      const whoKooks = assignCook(counts.adrian, counts.janina, today);
+
+      const match: MatchResult = {
+        id: `match-${Date.now()}`,
+        date: today,
+        matched_meal_name: chosen.meal_name,
+        matched_recipe_json: chosen.recipe_json!,
+        matched_image_url: chosen.meal_image_url,
+        who_cooks: whoKooks,
+        match_type: "exact",
+        created_at: new Date().toISOString(),
+      };
+
+      setMatchResult(match);
+      setMatchDismissed(false);
+      setPendingPicks(null);
+      saveMatchResult(match);
+
+      if (match.matched_recipe_json) {
+        const items = buildShoppingList(match.matched_recipe_json, getLocation());
+        setShoppingItems(items);
+        setShoppingMealName(match.matched_meal_name);
+        saveShoppingList(today, items);
+      }
+    },
+    [today]
+  );
+
+  // Während Pending: pollen, ob der Partner die Entscheidung getroffen hat
+  useEffect(() => {
+    if (!pendingPicks || matchResult) return;
+    const check = async () => {
+      const existing = getTodaysMatch(today) ?? (await fetchRemoteMatch(today));
+      if (existing) {
+        setMatchResult(existing);
+        setPendingPicks(null);
+        if (existing.matched_recipe_json) {
+          const items = buildShoppingList(existing.matched_recipe_json, getLocation());
+          setShoppingItems(items);
+          setShoppingMealName(existing.matched_meal_name);
+          saveShoppingList(today, items);
+        }
+      }
+    };
+    const interval = setInterval(check, 2000);
+    return () => clearInterval(interval);
+  }, [pendingPicks, matchResult, today]);
+
   // ── Partner subscription ─────────────────────────────────────────────────
 
   useEffect(() => {
@@ -241,32 +299,20 @@ function AppContent() {
         created_at: new Date().toISOString(),
       };
 
-      const { matchType, matchedMeal } = determineMatch(myChoice, partnerSuggestion);
-      const counts = getCookCounts();
-      const whoKooks = assignCook(counts.adrian, counts.janina, today);
+      const isExact =
+        myChoice.meal_name === partnerSuggestion.meal_name &&
+        myChoice.cuisine_type === partnerSuggestion.cuisine_type;
 
-      const match: MatchResult = {
-        id: `match-${Date.now()}`,
-        date: today,
-        matched_meal_name: matchedMeal.meal_name,
-        matched_recipe_json: matchedMeal.recipe_json!,
-        matched_image_url: matchedMeal.meal_image_url,
-        who_cooks: whoKooks,
-        match_type: matchType,
-        created_at: new Date().toISOString(),
-      };
-
-      setMatchResult(match);
-      setMatchDismissed(false); // frisches Match → Celebration zeigen
-      saveMatchResult(match);
-
-      // Build shopping list
-      if (match.matched_recipe_json) {
-        const items = buildShoppingList(match.matched_recipe_json, getLocation());
-        setShoppingItems(items);
-        setShoppingMealName(match.matched_meal_name);
-        saveShoppingList(today, items);
+      if (!isExact) {
+        // Mismatch: beide Wahlen anzeigen, Entscheidung abwarten
+        setPendingPicks({
+          adrian: currentUser === "adrian" ? myChoice : partnerSuggestion,
+          janina: currentUser === "janina" ? myChoice : partnerSuggestion,
+        });
+        return;
       }
+
+      finalizeMatch(myChoice);
     });
 
     unsubscribeRef.current = unsub;
@@ -379,6 +425,69 @@ function AppContent() {
           }}
         />
       </AnimatePresence>
+    );
+  }
+
+  // Mismatch-Screen: beide haben gewählt, aber unterschiedlich
+  if (pendingPicks && !matchResult) {
+    const myPick = pendingPicks[currentUser];
+    const partnerRole: UserRole = currentUser === "adrian" ? "janina" : "adrian";
+    const partnerPick = pendingPicks[partnerRole];
+    const partnerName = partnerRole === "adrian" ? "Adrian" : "Janina";
+
+    const Card = ({ pick, label, onPick }: { pick: DailySuggestion; label: string; onPick: () => void }) => (
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={onPick}
+        className="w-full bg-bg-card rounded-2xl overflow-hidden text-left"
+      >
+        {pick.meal_image_url && (
+          <img src={pick.meal_image_url} alt="" className="w-full h-32 object-cover" />
+        )}
+        <div className="p-4">
+          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">{label}</p>
+          <p className="font-display text-base font-semibold text-text-primary mb-2">
+            {pick.meal_name}
+          </p>
+          <p className="text-xs text-accent-gold">{pick.cuisine_type}</p>
+        </div>
+      </motion.button>
+    );
+
+    return (
+      <div className="min-h-dvh bg-bg-primary flex flex-col px-5 py-8 safe-top safe-bottom">
+        <div className="text-center mb-6">
+          <p className="text-accent-gold text-xs uppercase tracking-[0.25em] mb-2">Kein Match</p>
+          <h2 className="font-display text-xl font-bold text-text-primary mb-1">
+            Ihr habt unterschiedlich gewählt
+          </h2>
+          <p className="text-sm text-text-muted">
+            Einigt euch — wer zuerst tippt, entscheidet.
+          </p>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          <Card pick={myPick} label="Deine Wahl" onPick={() => finalizeMatch(myPick)} />
+          <div className="text-center text-xs text-text-muted">oder</div>
+          <Card
+            pick={partnerPick}
+            label={`${partnerName}s Wahl`}
+            onPick={() => finalizeMatch(partnerPick)}
+          />
+        </div>
+
+        <button
+          onClick={() => {
+            setPendingPicks(null);
+            setSelectedId(null);
+            setPartnerSelected(false);
+            generateSuggestions();
+          }}
+          className="text-sm text-text-muted underline decoration-dotted py-3"
+        >
+          Neu auswählen
+        </button>
+      </div>
     );
   }
 
