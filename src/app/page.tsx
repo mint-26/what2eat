@@ -133,6 +133,8 @@ function AppContent() {
     const todaysMatch = getTodaysMatch(today);
     if (todaysMatch) {
       setMatchResult(todaysMatch);
+      // Beim Reload nicht erneut die Celebration zeigen
+      setMatchDismissed(true);
       if (!savedShopping.length && todaysMatch.matched_recipe_json) {
         const items = buildShoppingList(todaysMatch.matched_recipe_json, getLocation());
         setShoppingItems(items);
@@ -255,6 +257,7 @@ function AppContent() {
       };
 
       setMatchResult(match);
+      setMatchDismissed(false); // frisches Match → Celebration zeigen
       saveMatchResult(match);
 
       // Build shopping list
@@ -298,37 +301,49 @@ function AppContent() {
 
   function handleBackFromRecipe() {
     setShowRecipe(false);
-    // Show rating prompt if not yet rated today
-    const existing = history.find((h) => h.date_cooked === today);
-    const myRating =
-      currentUser === "adrian"
-        ? existing?.rating_adrian
-        : existing?.rating_janina;
+    // Recipe angesehen → Match-Celebration wegklicken, zeige Heute-Card
+    setMatchDismissed(true);
+  }
 
-    if (!myRating && matchResult) {
-      setShowRating(true);
-    }
+  // Rating-Prompt-State: welches Meal wird gerade bewertet
+  const [ratingMeal, setRatingMeal] = useState<{ date: string; meal_name: string; image_url: string | null } | null>(null);
+
+  function openRatingFor(date: string, mealName: string, imageUrl: string | null) {
+    setRatingMeal({ date, meal_name: mealName, image_url: imageUrl });
+    setShowRating(true);
   }
 
   async function handleRatingSave(rating: number, wouldRepeat: boolean) {
-    if (!matchResult || !currentUser) return;
+    if (!currentUser) return;
+    const target = ratingMeal ?? (matchResult ? {
+      date: today,
+      meal_name: matchResult.matched_meal_name,
+      image_url: matchResult.matched_image_url,
+    } : null);
+    if (!target) return;
     setShowRating(false);
 
     await saveRating(
-      today,
-      matchResult.matched_meal_name,
+      target.date,
+      target.meal_name,
       currentUser,
       rating,
       wouldRepeat,
-      matchResult.matched_image_url
+      target.image_url
     );
 
-    // Increment cook count for whoever cooked
-    await incrementCookCount(matchResult.who_cooks);
+    // Nur für heutiges Match: Cook-Count erhöhen (nur beim ersten Bewerter)
+    if (target.date === today && matchResult) {
+      const existing = history.find((h) => h.date_cooked === today);
+      const alreadyRated = existing?.rating_adrian != null || existing?.rating_janina != null;
+      if (!alreadyRated) {
+        await incrementCookCount(matchResult.who_cooks);
+      }
+      setMatchDismissed(true);
+    }
 
-    // Refresh history and dismiss the match celebration (user is done for today)
+    setRatingMeal(null);
     setHistory(getMealHistory());
-    setMatchDismissed(true);
   }
 
   // ── Rendering ─────────────────────────────────────────────────────────────
@@ -345,16 +360,23 @@ function AppContent() {
     return <ProfilePicker onSelect={setCurrentUser} />;
   }
 
-  // Rating overlay (post-recipe)
-  if (showRating && matchResult) {
+  // Rating overlay
+  if (showRating && (ratingMeal || matchResult)) {
+    const m = ratingMeal ?? {
+      meal_name: matchResult!.matched_meal_name,
+      image_url: matchResult!.matched_image_url,
+    };
     return (
       <AnimatePresence>
         <RatingOverlay
-          mealName={matchResult.matched_meal_name}
-          imageUrl={matchResult.matched_image_url}
+          mealName={m.meal_name}
+          imageUrl={m.image_url}
           currentUser={currentUser}
           onSave={handleRatingSave}
-          onSkip={() => setShowRating(false)}
+          onSkip={() => {
+            setShowRating(false);
+            setRatingMeal(null);
+          }}
         />
       </AnimatePresence>
     );
@@ -411,6 +433,43 @@ function AppContent() {
 
       {/* Main content */}
       <main className="pb-20">
+        {/* ── Unrated-Reminder Banner ──────────────────────────────────── */}
+        {activeTab === "heute" && (() => {
+          const unrated = history.filter((h) => {
+            if (h.date_cooked === today) return false;
+            const mine = currentUser === "adrian" ? h.rating_adrian : h.rating_janina;
+            return mine == null;
+          }).slice(0, 3);
+          if (unrated.length === 0) return null;
+          return (
+            <div className="px-5 pt-3">
+              <div className="bg-accent-gold/10 border border-accent-gold/30 rounded-2xl p-3">
+                <p className="text-xs text-accent-gold font-medium mb-2">
+                  ⭐ {unrated.length === 1 ? "Ein Gericht wartet" : `${unrated.length} Gerichte warten`} auf deine Bewertung
+                </p>
+                <div className="space-y-1">
+                  {unrated.map((h) => (
+                    <button
+                      key={h.date_cooked}
+                      onClick={() => openRatingFor(h.date_cooked, h.meal_name, h.image_url)}
+                      className="w-full flex items-center gap-2 text-left py-1.5 px-2 rounded-lg hover:bg-bg-elevated transition-colors"
+                    >
+                      {h.image_url && (
+                        <img src={h.image_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-primary truncate">{h.meal_name}</p>
+                        <p className="text-[10px] text-text-muted">{h.date_cooked}</p>
+                      </div>
+                      <span className="text-xs text-accent-gold">Bewerten →</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Heute tab ─────────────────────────────────────────────────── */}
         {activeTab === "heute" && matchResult && matchDismissed && (
           <div className="px-5 pt-4">
@@ -436,7 +495,7 @@ function AppContent() {
                 <h2 className="text-xl font-serif mb-3">
                   {matchResult.matched_meal_name}
                 </h2>
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-2">
                   <button
                     onClick={() => setShowRecipe(true)}
                     className="flex-1 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm"
@@ -450,6 +509,32 @@ function AppContent() {
                     Einkaufsliste
                   </button>
                 </div>
+                {(() => {
+                  const todayEntry = history.find((h) => h.date_cooked === today);
+                  const myRating =
+                    currentUser === "adrian" ? todayEntry?.rating_adrian : todayEntry?.rating_janina;
+                  if (myRating != null) {
+                    return (
+                      <p className="text-xs text-accent-green text-center pt-1">
+                        Bewertet ✓ ({myRating}/5)
+                      </p>
+                    );
+                  }
+                  return (
+                    <button
+                      onClick={() =>
+                        openRatingFor(
+                          today,
+                          matchResult.matched_meal_name,
+                          matchResult.matched_image_url
+                        )
+                      }
+                      className="w-full py-3 rounded-xl border border-accent-green/40 bg-accent-green/10 text-accent-green font-medium text-sm"
+                    >
+                      Gekocht — jetzt bewerten
+                    </button>
+                  );
+                })()}
               </div>
             </motion.div>
           </div>
@@ -574,6 +659,7 @@ function AppContent() {
             items={shoppingItems}
             date={today}
             mealName={shoppingMealName}
+            currentUser={currentUser}
           />
         )}
 

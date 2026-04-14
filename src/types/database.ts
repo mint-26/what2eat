@@ -115,6 +115,8 @@ export interface ShoppingItem {
   package_note?: string | null;
   /** Empfohlener Laden basierend auf Standort. */
   store?: string | null;
+  /** Wer hat es abgehakt (bringt es mit oder kauft es). */
+  checked_by?: UserRole | null;
 }
 
 // Supabase Database type (simplified for what2eat schema)

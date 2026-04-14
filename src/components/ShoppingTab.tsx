@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import type { ShoppingItem } from "@/types/database";
-import { saveShoppingList, buildShoppingList, getTodaysMatch } from "@/lib/db";
+import type { ShoppingItem, UserRole } from "@/types/database";
+import { saveShoppingList, buildShoppingList, getTodaysMatch, getShoppingList } from "@/lib/db";
 import {
   LOCATIONS,
   getLocation,
@@ -42,12 +42,19 @@ export function ShoppingTab({
   items: initialItems,
   date,
   mealName,
+  currentUser,
 }: {
   items: ShoppingItem[];
   date: string;
   mealName?: string | null;
+  currentUser: UserRole;
 }) {
-  const [items, setItems] = useState<ShoppingItem[]>(initialItems);
+  // Authoritative read from localStorage on mount; fall back to prop seed.
+  const [items, setItems] = useState<ShoppingItem[]>(() => {
+    if (typeof window === "undefined") return initialItems;
+    const saved = getShoppingList(date);
+    return saved.length > 0 ? saved : initialItems;
+  });
   const [location, setLoc] = useState<LocationKey | null>(null);
   const [groupMode, setGroupMode] = useState<GroupMode>("store");
 
@@ -56,10 +63,12 @@ export function ShoppingTab({
     setLoc(getLocation());
   }, []);
 
-  // Sync when parent updates
+  // If parent seeds a list we don't have yet (first match today), adopt it.
   useEffect(() => {
-    setItems(initialItems);
-  }, [initialItems]);
+    if (items.length === 0 && initialItems.length > 0) {
+      setItems(initialItems);
+    }
+  }, [initialItems, items.length]);
 
   // When location is picked, rebuild items with store assignments
   function pickLocation(key: LocationKey) {
@@ -79,19 +88,28 @@ export function ShoppingTab({
   }
 
   function toggle(index: number) {
-    const updated = items.map((item, i) =>
-      i === index ? { ...item, checked: !item.checked } : item
-    );
+    const updated = items.map((item, i) => {
+      if (i !== index) return item;
+      const willCheck = !item.checked;
+      return {
+        ...item,
+        checked: willCheck,
+        checked_by: willCheck ? currentUser : null,
+      };
+    });
     setItems(updated);
     saveShoppingList(date, updated);
     if (navigator.vibrate) navigator.vibrate(30);
   }
 
   function clearChecked() {
-    const updated = items.map((item) => ({ ...item, checked: false }));
+    const updated = items.map((item) => ({ ...item, checked: false, checked_by: null }));
     setItems(updated);
     saveShoppingList(date, updated);
   }
+
+  const userBadge = (role: UserRole) =>
+    role === "adrian" ? { label: "A", cls: "bg-sky-500/30 text-sky-200" } : { label: "J", cls: "bg-pink-500/30 text-pink-200" };
 
   if (items.length === 0) {
     return (
@@ -256,17 +274,24 @@ export function ShoppingTab({
                       item.checked ? "bg-bg-elevated opacity-50" : "bg-bg-card"
                     }`}
                   >
-                    <span
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                        item.checked
-                          ? "border-accent-green bg-accent-green"
-                          : "border-white/20"
-                      }`}
-                    >
-                      {item.checked && (
-                        <span className="text-bg-primary text-xs font-bold">✓</span>
-                      )}
-                    </span>
+                    {item.checked && item.checked_by ? (
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold ${userBadge(item.checked_by).cls}`}
+                        title={item.checked_by === "adrian" ? "Adrian bringt/kauft" : "Janina bringt/kauft"}
+                      >
+                        {userBadge(item.checked_by).label}
+                      </span>
+                    ) : (
+                      <span
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                          item.checked ? "border-accent-green bg-accent-green" : "border-white/20"
+                        }`}
+                      >
+                        {item.checked && (
+                          <span className="text-bg-primary text-xs font-bold">✓</span>
+                        )}
+                      </span>
+                    )}
 
                     <div className="flex-1 min-w-0">
                       <div
