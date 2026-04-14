@@ -102,6 +102,7 @@ function AppContent() {
   // Views
   const [showRecipe, setShowRecipe] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [matchDismissed, setMatchDismissed] = useState(false);
 
   // Data
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -324,8 +325,9 @@ function AppContent() {
     // Increment cook count for whoever cooked
     await incrementCookCount(matchResult.who_cooks);
 
-    // Refresh history
+    // Refresh history and dismiss the match celebration (user is done for today)
     setHistory(getMealHistory());
+    setMatchDismissed(true);
   }
 
   // ── Rendering ─────────────────────────────────────────────────────────────
@@ -357,8 +359,8 @@ function AppContent() {
     );
   }
 
-  // Match result overlay
-  if (matchResult && !showRecipe) {
+  // Match result overlay (only before user has dismissed / rated)
+  if (matchResult && !showRecipe && !matchDismissed) {
     return (
       <MatchResultScreen
         match={matchResult}
@@ -409,7 +411,50 @@ function AppContent() {
       {/* Main content */}
       <main className="pb-20">
         {/* ── Heute tab ─────────────────────────────────────────────────── */}
-        {activeTab === "heute" && (
+        {activeTab === "heute" && matchResult && matchDismissed && (
+          <div className="px-5 pt-4">
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-3">
+              Heute
+            </p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-bg-card rounded-2xl overflow-hidden"
+            >
+              {matchResult.matched_image_url && (
+                <img
+                  src={matchResult.matched_image_url}
+                  alt=""
+                  className="w-full h-48 object-cover"
+                />
+              )}
+              <div className="p-4">
+                <p className="text-xs text-accent-gold mb-1">
+                  🍳 {matchResult.who_cooks === "adrian" ? "Adrian" : "Janina"} kocht
+                </p>
+                <h2 className="text-xl font-serif mb-3">
+                  {matchResult.matched_meal_name}
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowRecipe(true)}
+                    className="flex-1 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm"
+                  >
+                    Rezept ansehen
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("einkauf")}
+                    className="flex-1 py-3 rounded-xl bg-bg-elevated text-text-primary font-semibold text-sm"
+                  >
+                    Einkaufsliste
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {activeTab === "heute" && !(matchResult && matchDismissed) && (
           <div className="px-5">
             {/* Partner status */}
             <div className="flex items-center gap-2 mb-4 py-2">
