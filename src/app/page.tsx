@@ -239,7 +239,7 @@ function AppContent() {
 
       const { matchType, matchedMeal } = determineMatch(myChoice, partnerSuggestion);
       const counts = getCookCounts();
-      const whoKooks = assignCook(counts.adrian, counts.janina);
+      const whoKooks = assignCook(counts.adrian, counts.janina, today);
 
       const match: MatchResult = {
         id: `match-${Date.now()}`,
