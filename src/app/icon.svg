@@ -1,10 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <defs>
-    <linearGradient id="fg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#d4a843"/>
-      <stop offset="100%" style="stop-color:#c74b3f"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="6" fill="#1a1a1a"/>
-  <text x="16" y="24" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="22" font-weight="700" fill="url(#fg)">2</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <rect width="48" height="48" rx="10" fill="#1a1a1a"/>
+  <circle cx="18" cy="24" r="12" fill="none" stroke="#c74b3f" stroke-width="2.5" opacity="0.9"/>
+  <circle cx="30" cy="24" r="12" fill="none" stroke="#d4a843" stroke-width="2.5" opacity="0.9"/>
+  <ellipse cx="24" cy="24" rx="4.5" ry="7.5" fill="#c47a5a" opacity="0.25"/>
 </svg>
