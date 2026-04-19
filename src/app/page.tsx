@@ -808,6 +808,7 @@ function AppContent() {
             date={today}
             mealName={shoppingMealName}
             currentUser={currentUser}
+            onStartCooking={matchResult ? () => setShowRecipe(true) : undefined}
           />
         )}
 

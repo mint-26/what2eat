@@ -60,11 +60,13 @@ export function ShoppingTab({
   date,
   mealName,
   currentUser,
+  onStartCooking,
 }: {
   items: ShoppingItem[];
   date: string;
   mealName?: string | null;
   currentUser: UserRole;
+  onStartCooking?: () => void;
 }) {
   // Authoritative read from localStorage on mount; fall back to prop seed.
   const [items, setItems] = useState<ShoppingItem[]>(() => {
@@ -394,7 +396,16 @@ export function ShoppingTab({
           className="mt-6 text-center"
         >
           <span className="text-3xl block mb-2">✅</span>
-          <p className="text-accent-green font-medium text-sm">Alles eingekauft!</p>
+          <p className="text-accent-green font-medium text-sm mb-4">Alles eingekauft!</p>
+          {onStartCooking && (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={onStartCooking}
+              className="w-full py-4 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-base flex items-center justify-center gap-2"
+            >
+              <span>🍳</span> Kochen starten
+            </motion.button>
+          )}
         </motion.div>
       )}
     </div>
