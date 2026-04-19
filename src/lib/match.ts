@@ -1,13 +1,16 @@
 import type { DailySuggestion, UserRole, MatchType } from "@/types/database";
 
-// Deterministic 0–1 pseudo-random from a string (so both devices agree)
+// Deterministic 0–1 pseudo-random from a string (so both devices agree).
+// Uses FNV-1a for good distribution even on very similar inputs (e.g. dates
+// that only differ in the last digit).
 function seededRandom(seed: string): number {
-  let hash = 0;
+  let hash = 2166136261; // FNV offset basis
   for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 16777619); // FNV prime
     hash |= 0;
   }
-  return Math.abs(hash % 1000) / 1000;
+  return Math.abs(hash % 10000) / 10000;
 }
 
 export function determineMatch(
