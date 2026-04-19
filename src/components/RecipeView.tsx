@@ -10,6 +10,7 @@ export function RecipeView({
   currentUser,
   onBack,
   onShare,
+  onGoShopping,
 }: {
   mealName: string;
   imageUrl: string | null;
@@ -17,6 +18,7 @@ export function RecipeView({
   currentUser: UserRole;
   onBack: () => void;
   onShare: () => void;
+  onGoShopping?: () => void;
 }) {
   const nutrition = recipe.nutrition_per_person[currentUser];
   const otherNutrition = recipe.nutrition_per_person[currentUser === "adrian" ? "janina" : "adrian"];
@@ -139,14 +141,29 @@ export function RecipeView({
         </div>
       </div>
 
-      {/* Sticky share bar */}
+      {/* Sticky bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-bg-secondary/90 backdrop-blur-xl border-t border-white/5 safe-bottom">
-        <div className="flex items-center justify-center gap-3 h-16 px-5">
+        <div className="flex items-center gap-3 h-16 px-5">
+          {onGoShopping && (
+            <button
+              onClick={onGoShopping}
+              className="flex-1 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm flex items-center justify-center gap-2"
+            >
+              🛒 Einkaufsliste
+            </button>
+          )}
+          <button
+            onClick={onBack}
+            className="flex-1 py-3 rounded-xl bg-bg-card border border-white/10 text-text-primary font-medium text-sm"
+          >
+            Fertig
+          </button>
           <button
             onClick={onShare}
-            className="flex-1 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm flex items-center justify-center gap-2"
+            className="w-10 h-10 shrink-0 rounded-xl bg-bg-card border border-white/10 flex items-center justify-center"
+            aria-label="Teilen"
           >
-            Rezept teilen
+            <span className="text-sm">↗</span>
           </button>
         </div>
       </div>

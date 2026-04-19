@@ -502,6 +502,11 @@ function AppContent() {
       <MatchResultScreen
         match={matchResult}
         onViewRecipe={() => setShowRecipe(true)}
+        onGoShopping={() => {
+          setMatchDismissed(true);
+          setActiveTab("einkauf");
+        }}
+        onDismiss={() => setMatchDismissed(true)}
       />
     );
   }
@@ -522,6 +527,11 @@ function AppContent() {
             currentUser
           )
         }
+        onGoShopping={() => {
+          setShowRecipe(false);
+          setMatchDismissed(true);
+          setActiveTab("einkauf");
+        }}
       />
     );
   }

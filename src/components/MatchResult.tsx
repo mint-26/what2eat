@@ -42,7 +42,6 @@ function CoinFlip({ whoKooks, onDone }: { whoKooks: string; onDone: () => void }
   useEffect(() => {
     const timer = setTimeout(() => {
       setPhase("result");
-      // Haptic feedback
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       setTimeout(onDone, 1500);
     }, 2000);
@@ -84,9 +83,13 @@ function CoinFlip({ whoKooks, onDone }: { whoKooks: string; onDone: () => void }
 export function MatchResultScreen({
   match,
   onViewRecipe,
+  onGoShopping,
+  onDismiss,
 }: {
   match: MatchResultType;
   onViewRecipe: () => void;
+  onGoShopping: () => void;
+  onDismiss: () => void;
 }) {
   const [showCook, setShowCook] = useState(false);
   const [cookRevealed, setCookRevealed] = useState(false);
@@ -160,17 +163,32 @@ export function MatchResultScreen({
         </motion.div>
       )}
 
-      {/* CTA */}
+      {/* CTAs */}
       {cookRevealed && (
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={onViewRecipe}
-          className="w-full max-w-xs py-4 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-lg"
+          className="w-full max-w-xs space-y-3"
         >
-          Rezept ansehen
-        </motion.button>
+          <button
+            onClick={onViewRecipe}
+            className="w-full py-4 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-base"
+          >
+            Rezept ansehen
+          </button>
+          <button
+            onClick={onGoShopping}
+            className="w-full py-3.5 rounded-2xl bg-bg-card border border-white/10 text-text-primary font-medium text-sm flex items-center justify-center gap-2"
+          >
+            <span>🛒</span> Einkaufsliste
+          </button>
+          <button
+            onClick={onDismiss}
+            className="w-full py-2 text-sm text-text-muted"
+          >
+            Weiter →
+          </button>
+        </motion.div>
       )}
     </motion.div>
   );
