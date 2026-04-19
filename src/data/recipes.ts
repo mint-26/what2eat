@@ -878,17 +878,13 @@ export function selectDailyRecipes(
   // Deterministic seed from date so both partners get consistent overlap
   const today = seed ?? dateToSeed(new Date());
 
-  // Filter out recent meals
-  const available = RECIPES.filter(
-    (r) => !recentMealNames.includes(r.meal_name)
-  );
-
-  if (available.length < 3) return available.slice(0, 3);
-
-  // Both partners see the SAME 3 recipes (shared seed).
-  // userRole is kept for future personalisation but currently ignored here.
+  // WICHTIG: Immer ALLE Rezepte mit dem gleichen Seed shufflen, damit beide
+  // Geräte dieselbe Reihenfolge bekommen. Recent-Filter erst beim Picken
+  // anwenden — sonst verändert unterschiedliche localStorage-History das
+  // Array und damit den gesamten Shuffle.
   void userRole;
-  const shuffled = seededShuffle([...available], today);
+  const shuffled = seededShuffle([...RECIPES], today);
+  const recentSet = new Set(recentMealNames);
 
   // Pick 3 with diverse cuisines — no two from the same cuisine
   const selected: StaticRecipe[] = [];
@@ -896,6 +892,7 @@ export function selectDailyRecipes(
 
   for (const recipe of shuffled) {
     if (selected.length >= 3) break;
+    if (recentSet.has(recipe.meal_name)) continue;
     if (!usedCuisines.has(recipe.cuisine_type)) {
       selected.push(recipe);
       usedCuisines.add(recipe.cuisine_type);
@@ -906,6 +903,7 @@ export function selectDailyRecipes(
   if (selected.length < 3) {
     for (const recipe of shuffled) {
       if (selected.length >= 3) break;
+      if (recentSet.has(recipe.meal_name)) continue;
       if (!selected.includes(recipe)) {
         selected.push(recipe);
       }
