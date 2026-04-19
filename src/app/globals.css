@@ -1,23 +1,29 @@
 @import "tailwindcss";
 
-@theme {
-  /* what2eat Brand Colors */
-  --color-bg-primary: #1a1a1a;
-  --color-bg-secondary: #242424;
-  --color-bg-card: #2a2a2a;
-  --color-bg-elevated: #333333;
+/* Enable class-based dark mode: `.dark` anywhere up the tree flips the theme. */
+@custom-variant dark (&:where(.dark, .dark *));
 
-  --color-text-primary: #f5f0eb;
-  --color-text-secondary: #a89f95;
-  --color-text-muted: #6b6560;
+@theme {
+  /* ── Light mode (default) — warm off-white palette, passend zum Food-Theme ── */
+  --color-bg-primary: #faf7f2;
+  --color-bg-secondary: #f2ebe0;
+  --color-bg-card: #ede5d6;
+  --color-bg-elevated: #e1d8c6;
+
+  --color-text-primary: #2a2521;
+  --color-text-secondary: #5a5048;
+  --color-text-muted: #8a8078;
 
   --color-accent-red: #c74b3f;
   --color-accent-red-light: #e05a4e;
-  --color-accent-gold: #d4a843;
-  --color-accent-gold-light: #e8c05a;
-  --color-accent-green: #6b9e5e;
-  --color-accent-green-light: #82b874;
+  --color-accent-gold: #c89630;
+  --color-accent-gold-light: #d4a843;
+  --color-accent-green: #5a8a4f;
+  --color-accent-green-light: #6b9e5e;
   --color-accent-terracotta: #c47a5a;
+
+  /* Fixed dark "ink" — always-dark text for contrast on gold/red buttons */
+  --color-ink: #1a1a1a;
 
   /* Typography */
   --font-display: "Playfair Display", Georgia, serif;
@@ -29,6 +35,21 @@
 }
 
 @layer base {
+  /* Dark mode overrides — same token names, different values. */
+  .dark {
+    --color-bg-primary: #1a1a1a;
+    --color-bg-secondary: #242424;
+    --color-bg-card: #2a2a2a;
+    --color-bg-elevated: #333333;
+
+    --color-text-primary: #f5f0eb;
+    --color-text-secondary: #a89f95;
+    --color-text-muted: #6b6560;
+
+    --color-accent-gold: #d4a843;
+    --color-accent-green: #6b9e5e;
+  }
+
   * {
     -webkit-tap-highlight-color: transparent;
   }

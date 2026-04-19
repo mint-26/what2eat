@@ -50,7 +50,7 @@ function DayCard({ plan, isToday, onTap }: { plan: DayPlan; isToday: boolean; on
       {/* Day indicator */}
       <div className={`
         shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center
-        ${isToday ? "bg-accent-gold text-bg-primary" : "bg-bg-elevated text-text-secondary"}
+        ${isToday ? "bg-accent-gold text-ink" : "bg-bg-elevated text-text-secondary"}
       `}>
         <span className="text-[10px] font-medium uppercase tracking-wider">{plan.dayLabel}</span>
         <span className="text-lg font-bold leading-tight">{dayNum}</span>
@@ -170,7 +170,7 @@ export function WeekPlan({ currentUser }: { currentUser: UserRole }) {
       {/* Generate week button */}
       <motion.button
         whileTap={{ scale: 0.97 }}
-        className="w-full mt-6 py-4 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-sm"
+        className="w-full mt-6 py-4 rounded-2xl bg-accent-gold text-ink font-semibold text-sm"
         onClick={() => {
           // TODO: Generate suggestions for entire week
         }}

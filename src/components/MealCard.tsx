@@ -60,7 +60,7 @@ export function MealCard({
 
         {/* Cuisine badge */}
         {suggestion.cuisine_type && (
-          <span className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-xs px-2.5 py-1 rounded-full text-text-primary">
+          <span className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-xs px-2.5 py-1 rounded-full text-white">
             {suggestion.cuisine_type}
           </span>
         )}
@@ -72,7 +72,7 @@ export function MealCard({
             animate={{ scale: 1 }}
             className="absolute top-3 right-3 w-8 h-8 bg-accent-gold rounded-full flex items-center justify-center"
           >
-            <span className="text-bg-primary text-sm font-bold">✓</span>
+            <span className="text-ink text-sm font-bold">✓</span>
           </motion.div>
         )}
       </div>

@@ -16,8 +16,15 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#1a1a1a",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf7f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
+  ],
 };
+
+// Runs before React hydrates — sets .dark on <html> if the user picked dark
+// previously. Default is light. Synchronous inline script avoids FOUC.
+const THEME_INIT_SCRIPT = `(function(){try{if(localStorage.getItem('w2e_theme')==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -27,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

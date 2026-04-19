@@ -47,7 +47,7 @@ function ShoppingItemRow({
           ${item.checked ? "bg-accent-green border-accent-green" : "border-text-muted/30"}
         `}
       >
-        {item.checked && <span className="text-bg-primary text-xs font-bold">✓</span>}
+        {item.checked && <span className="text-ink text-xs font-bold">✓</span>}
       </motion.div>
 
       {/* Image */}
@@ -178,7 +178,7 @@ export function ShoppingList({
       <motion.button
         whileTap={{ scale: 0.97 }}
         onClick={handleShare}
-        className="w-full py-4 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-sm flex items-center justify-center gap-2"
+        className="w-full py-4 rounded-2xl bg-accent-gold text-ink font-semibold text-sm flex items-center justify-center gap-2"
       >
         Einkaufsliste teilen
       </motion.button>

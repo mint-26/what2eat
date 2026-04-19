@@ -87,7 +87,7 @@ export function RatingOverlay({
         className={`w-full max-w-xs flex items-center justify-between px-5 py-3.5 rounded-2xl border mb-8 transition-colors ${
           wouldRepeat
             ? "border-accent-green/40 bg-accent-green/10"
-            : "border-white/10 bg-bg-card"
+            : "border-black/10 dark:border-white/10 bg-bg-card"
         }`}
       >
         <div className="text-left">
@@ -103,7 +103,7 @@ export function RatingOverlay({
       <div className="flex gap-3 w-full max-w-xs">
         <button
           onClick={onSkip}
-          className="flex-1 py-3.5 rounded-2xl border border-white/10 text-text-muted text-sm font-medium"
+          className="flex-1 py-3.5 rounded-2xl border border-black/10 dark:border-white/10 text-text-muted text-sm font-medium"
         >
           Überspringen
         </button>
@@ -112,8 +112,8 @@ export function RatingOverlay({
           onClick={() => rating > 0 && onSave(rating, wouldRepeat)}
           className={`flex-1 py-3.5 rounded-2xl font-semibold text-sm transition-opacity ${
             rating > 0
-              ? "bg-accent-gold text-bg-primary opacity-100"
-              : "bg-accent-gold/40 text-bg-primary/60 opacity-60 cursor-not-allowed"
+              ? "bg-accent-gold text-ink opacity-100"
+              : "bg-accent-gold/40 text-ink/60 opacity-60 cursor-not-allowed"
           }`}
         >
           Speichern

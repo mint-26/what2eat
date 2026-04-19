@@ -19,7 +19,7 @@ export function BottomNav({
   onChange: (tab: Tab) => void;
 }) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-bg-secondary/90 backdrop-blur-xl border-t border-white/5 safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-bg-secondary/90 backdrop-blur-xl border-t border-black/5 dark:border-white/5 safe-bottom">
       <div className="flex items-center justify-around h-14 max-w-md mx-auto">
         {tabs.map((tab) => {
           const isActive = active === tab.id;

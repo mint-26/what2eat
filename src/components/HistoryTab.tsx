@@ -161,7 +161,7 @@ function RatingModal({ entry, currentUser, onSave, onClose }: RatingModalProps) 
           className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border mb-6 transition-colors ${
             wouldRepeat
               ? "border-accent-green/40 bg-accent-green/10"
-              : "border-white/10 bg-bg-card"
+              : "border-black/10 dark:border-white/10 bg-bg-card"
           }`}
         >
           <span className="text-sm text-text-primary">Würde ich wiederholen</span>
@@ -170,7 +170,7 @@ function RatingModal({ entry, currentUser, onSave, onClose }: RatingModalProps) 
 
         <button
           onClick={() => onSave(rating, wouldRepeat)}
-          className="w-full py-3.5 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-sm"
+          className="w-full py-3.5 rounded-2xl bg-accent-gold text-ink font-semibold text-sm"
         >
           Bewertung speichern
         </button>

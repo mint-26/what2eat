@@ -91,7 +91,7 @@ export function RatingModal({
           onClick={() => onSubmit(rating, wouldRepeat)}
           className={`
             w-full py-4 rounded-2xl font-semibold text-sm transition-opacity
-            ${rating > 0 ? "bg-accent-gold text-bg-primary" : "bg-bg-card text-text-muted opacity-50"}
+            ${rating > 0 ? "bg-accent-gold text-ink" : "bg-bg-card text-text-muted opacity-50"}
           `}
         >
           Bewertung speichern

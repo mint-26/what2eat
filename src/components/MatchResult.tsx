@@ -11,10 +11,10 @@ import {
 } from "@/lib/packaging";
 
 const STORE_COLORS: Record<string, string> = {
-  Aldi: "bg-sky-500/20 text-sky-300 border-sky-500/30",
-  Lidl: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-  Rewe: "bg-red-500/20 text-red-300 border-red-500/30",
-  Edeka: "bg-amber-500/20 text-amber-200 border-amber-500/30",
+  Aldi: "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40 dark:border-sky-500/30",
+  Lidl: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/40 dark:border-yellow-500/30",
+  Rewe: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40 dark:border-red-500/30",
+  Edeka: "bg-amber-500/20 text-amber-700 dark:text-amber-200 border-amber-500/40 dark:border-amber-500/30",
 };
 
 function Confetti() {
@@ -239,13 +239,13 @@ export function MatchResultScreen({
         >
           <button
             onClick={onViewRecipe}
-            className="w-full py-4 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-base"
+            className="w-full py-4 rounded-2xl bg-accent-gold text-ink font-semibold text-base"
           >
             Rezept ansehen
           </button>
           <button
             onClick={onGoShopping}
-            className="w-full py-3.5 rounded-2xl bg-bg-card border border-white/10 text-text-primary font-medium text-sm flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-2xl bg-bg-card border border-black/10 dark:border-white/10 text-text-primary font-medium text-sm flex items-center justify-center gap-2"
           >
             <span>🛒</span> Einkaufsliste · {LOCATIONS[location].label}
           </button>

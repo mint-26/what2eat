@@ -41,7 +41,7 @@ export function RecipeView({
           onClick={onBack}
           className="absolute top-4 left-4 safe-top w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
         >
-          <span className="text-text-primary text-lg">←</span>
+          <span className="text-white text-lg">←</span>
         </button>
       </div>
 
@@ -142,25 +142,25 @@ export function RecipeView({
       </div>
 
       {/* Sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-bg-secondary/90 backdrop-blur-xl border-t border-white/5 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-bg-secondary/90 backdrop-blur-xl border-t border-black/5 dark:border-white/5 safe-bottom">
         <div className="flex items-center gap-3 h-16 px-5">
           {onGoShopping && (
             <button
               onClick={onGoShopping}
-              className="flex-1 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-accent-gold text-ink font-semibold text-sm flex items-center justify-center gap-2"
             >
               🛒 Einkaufsliste
             </button>
           )}
           <button
             onClick={onBack}
-            className="flex-1 py-3 rounded-xl bg-bg-card border border-white/10 text-text-primary font-medium text-sm"
+            className="flex-1 py-3 rounded-xl bg-bg-card border border-black/10 dark:border-white/10 text-text-primary font-medium text-sm"
           >
             Fertig
           </button>
           <button
             onClick={onShare}
-            className="w-10 h-10 shrink-0 rounded-xl bg-bg-card border border-white/10 flex items-center justify-center"
+            className="w-10 h-10 shrink-0 rounded-xl bg-bg-card border border-black/10 dark:border-white/10 flex items-center justify-center"
             aria-label="Teilen"
           >
             <span className="text-sm">↗</span>

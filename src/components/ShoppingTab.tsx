@@ -37,10 +37,10 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const STORE_COLORS: Record<string, string> = {
-  Aldi: "bg-sky-500/20 text-sky-300 border-sky-500/30",
-  Lidl: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-  Rewe: "bg-red-500/20 text-red-300 border-red-500/30",
-  Edeka: "bg-amber-500/20 text-amber-200 border-amber-500/30",
+  Aldi: "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40 dark:border-sky-500/30",
+  Lidl: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/40 dark:border-yellow-500/30",
+  Rewe: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40 dark:border-red-500/30",
+  Edeka: "bg-amber-500/20 text-amber-700 dark:text-amber-200 border-amber-500/40 dark:border-amber-500/30",
 };
 
 type GroupMode = "category" | "store";
@@ -266,7 +266,7 @@ export function ShoppingTab({
           <button
             onClick={() => setGroupMode("store")}
             className={`text-[10px] px-3 py-1 rounded-full transition-colors ${
-              groupMode === "store" ? "bg-accent-gold text-bg-primary" : "text-text-muted"
+              groupMode === "store" ? "bg-accent-gold text-ink" : "text-text-muted"
             }`}
           >
             Nach Laden
@@ -274,7 +274,7 @@ export function ShoppingTab({
           <button
             onClick={() => setGroupMode("category")}
             className={`text-[10px] px-3 py-1 rounded-full transition-colors ${
-              groupMode === "category" ? "bg-accent-gold text-bg-primary" : "text-text-muted"
+              groupMode === "category" ? "bg-accent-gold text-ink" : "text-text-muted"
             }`}
           >
             Nach Kategorie
@@ -307,7 +307,7 @@ export function ShoppingTab({
           const isStore = groupMode === "store";
           const icon = isStore ? "🛒" : CATEGORY_ICONS[grp] ?? "📦";
           const labelClass = isStore
-            ? `text-xs px-2 py-0.5 rounded-full border ${STORE_COLORS[grp] ?? "bg-bg-card text-text-muted border-white/10"}`
+            ? `text-xs px-2 py-0.5 rounded-full border ${STORE_COLORS[grp] ?? "bg-bg-card text-text-muted border-black/10 dark:border-white/10"}`
             : "text-xs text-text-muted uppercase tracking-wider";
 
           return (
@@ -338,11 +338,11 @@ export function ShoppingTab({
                     ) : (
                       <span
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                          item.checked ? "border-accent-green bg-accent-green" : "border-white/20"
+                          item.checked ? "border-accent-green bg-accent-green" : "border-black/20 dark:border-white/20"
                         }`}
                       >
                         {item.checked && (
-                          <span className="text-bg-primary text-xs font-bold">✓</span>
+                          <span className="text-ink text-xs font-bold">✓</span>
                         )}
                       </span>
                     )}
@@ -401,7 +401,7 @@ export function ShoppingTab({
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={onStartCooking}
-              className="w-full py-4 rounded-2xl bg-accent-gold text-bg-primary font-semibold text-base flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl bg-accent-gold text-ink font-semibold text-base flex items-center justify-center gap-2"
             >
               <span>🍳</span> Kochen starten
             </motion.button>

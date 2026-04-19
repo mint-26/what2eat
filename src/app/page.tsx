@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UserProvider, useUser } from "@/lib/user-context";
 import { ProfilePicker } from "@/components/ProfilePicker";
 import { BottomNav } from "@/components/BottomNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { MealCard } from "@/components/MealCard";
 import { MatchResultScreen } from "@/components/MatchResult";
 import { RecipeView } from "@/components/RecipeView";
@@ -566,14 +567,17 @@ function AppContent() {
       <header className="sticky top-0 z-30 bg-bg-primary/90 backdrop-blur-xl safe-top">
         <div className="flex items-center justify-between px-5 h-14">
           <LogoFull />
-          <button
-            onClick={() => setCurrentUser(null)}
-            className="w-9 h-9 rounded-full bg-bg-card flex items-center justify-center"
-          >
-            <span className="text-lg">
-              {currentUser === "adrian" ? "👨‍🍳" : "👩‍🍳"}
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setCurrentUser(null)}
+              className="w-9 h-9 rounded-full bg-bg-card flex items-center justify-center"
+            >
+              <span className="text-lg">
+                {currentUser === "adrian" ? "👨‍🍳" : "👩‍🍳"}
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -644,7 +648,7 @@ function AppContent() {
                 <div className="flex gap-2 mb-2">
                   <button
                     onClick={() => setShowRecipe(true)}
-                    className="flex-1 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm"
+                    className="flex-1 py-3 rounded-xl bg-accent-gold text-ink font-semibold text-sm"
                   >
                     Rezept ansehen
                   </button>
@@ -732,7 +736,7 @@ function AppContent() {
                 <p className="text-accent-red mb-4">{error}</p>
                 <button
                   onClick={generateSuggestions}
-                  className="px-6 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm"
+                  className="px-6 py-3 rounded-xl bg-accent-gold text-ink font-semibold text-sm"
                 >
                   Nochmal versuchen
                 </button>
@@ -787,7 +791,7 @@ function AppContent() {
                 </p>
                 <button
                   onClick={generateSuggestions}
-                  className="px-6 py-3 rounded-xl bg-accent-gold text-bg-primary font-semibold text-sm"
+                  className="px-6 py-3 rounded-xl bg-accent-gold text-ink font-semibold text-sm"
                 >
                   Vorschläge generieren
                 </button>
@@ -908,7 +912,7 @@ function WeekTab({
               {/* Divider */}
               <div
                 className={`w-px h-10 shrink-0 ${
-                  isToday ? "bg-accent-gold/30" : "bg-white/10"
+                  isToday ? "bg-accent-gold/30" : "bg-black/10 dark:bg-white/10"
                 }`}
               />
 
