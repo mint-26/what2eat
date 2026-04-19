@@ -890,22 +890,25 @@ export function selectDailyRecipes(
   void userRole;
   const shuffled = seededShuffle([...available], today);
 
-  // Pick 3 with diverse cuisines and proteins
+  // Pick 3 with diverse cuisines — no two from the same cuisine
   const selected: StaticRecipe[] = [];
   const usedCuisines = new Set<string>();
-  const usedMainProteins = new Set<string>();
 
   for (const recipe of shuffled) {
     if (selected.length >= 3) break;
-
-    const mainProtein = recipe.tags[0]; // first tag is usually the protein
-    const isDuplicate =
-      usedCuisines.has(recipe.cuisine_type) && usedMainProteins.has(mainProtein);
-
-    if (!isDuplicate || selected.length < 3) {
+    if (!usedCuisines.has(recipe.cuisine_type)) {
       selected.push(recipe);
       usedCuisines.add(recipe.cuisine_type);
-      usedMainProteins.add(mainProtein);
+    }
+  }
+
+  // Fallback: if fewer than 3 unique cuisines, fill up from remaining
+  if (selected.length < 3) {
+    for (const recipe of shuffled) {
+      if (selected.length >= 3) break;
+      if (!selected.includes(recipe)) {
+        selected.push(recipe);
+      }
     }
   }
 
@@ -914,9 +917,10 @@ export function selectDailyRecipes(
 
 function dateToSeed(date: Date): number {
   const str = date.toISOString().split("T")[0];
-  let hash = 0;
+  let hash = 2166136261; // FNV-1a offset basis
   for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
     hash |= 0;
   }
   return Math.abs(hash);
