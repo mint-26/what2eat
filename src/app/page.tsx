@@ -327,7 +327,7 @@ function AppContent() {
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   async function handleSelect(id: string) {
-    if (selectedId) return; // already selected
+    // Erlaubt Re-Pick: bisherige Wahl wird überschrieben (upsert in Supabase)
     setSelectedId(id);
     if (navigator.vibrate) navigator.vibrate(50);
 
@@ -665,9 +665,9 @@ function AppContent() {
         )}
 
         {activeTab === "heute" && !(matchResult && matchDismissed) && (
-          <div className="px-5">
+          <div className="px-5 pt-2">
             {/* Partner status */}
-            <div className="flex items-center gap-2 mb-4 py-2">
+            <div className="flex items-center gap-2 mb-3 py-2 min-h-[40px]">
               <span className="text-sm">
                 {partnerSelected ? (
                   <span className="text-accent-green">
@@ -741,14 +741,16 @@ function AppContent() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 text-center"
+                className="mt-4 bg-bg-card rounded-2xl p-4"
               >
-                <p className="text-accent-gold text-sm">
-                  Deine Wahl:{" "}
-                  {suggestions.find((s) => s.id === selectedId)?.meal_name}
+                <p className="text-accent-gold text-sm font-medium text-center">
+                  ✓ {suggestions.find((s) => s.id === selectedId)?.meal_name}
                 </p>
-                <p className="text-text-muted text-xs mt-1">
+                <p className="text-text-muted text-xs mt-1 text-center">
                   Warte auf {partnerName}...
+                </p>
+                <p className="text-text-muted/60 text-[10px] mt-2 text-center">
+                  Tipp auf ein anderes Gericht um umzuwählen
                 </p>
               </motion.div>
             )}
