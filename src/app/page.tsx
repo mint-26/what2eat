@@ -16,7 +16,7 @@ import { shareRecipe } from "@/lib/share";
 import { assignCook } from "@/lib/match";
 import { selectDailyRecipes } from "@/data/recipes";
 import { getRecipeImage } from "@/data/recipe-images";
-import { getLocation } from "@/lib/packaging";
+import { getLocation, getLocationForDate, type LocationKey } from "@/lib/packaging";
 import {
   getCookCounts,
   incrementCookCount,
@@ -142,7 +142,7 @@ function AppContent() {
       // Beim Reload nicht erneut die Celebration zeigen
       setMatchDismissed(true);
       if (!savedShopping.length && todaysMatch.matched_recipe_json) {
-        const items = buildShoppingList(todaysMatch.matched_recipe_json, getLocation());
+        const items = buildShoppingList(todaysMatch.matched_recipe_json, getLocationForDate(today) ?? getLocation());
         setShoppingItems(items);
         setShoppingMealName(todaysMatch.matched_meal_name);
         saveShoppingList(today, items);
@@ -234,7 +234,10 @@ function AppContent() {
       saveMatchResult(match);
 
       if (match.matched_recipe_json) {
-        const items = buildShoppingList(match.matched_recipe_json, getLocation());
+        const items = buildShoppingList(
+          match.matched_recipe_json,
+          getLocationForDate(today) ?? getLocation()
+        );
         setShoppingItems(items);
         setShoppingMealName(match.matched_meal_name);
         saveShoppingList(today, items);
@@ -252,7 +255,10 @@ function AppContent() {
         setMatchResult(existing);
         setPendingPicks(null);
         if (existing.matched_recipe_json) {
-          const items = buildShoppingList(existing.matched_recipe_json, getLocation());
+          const items = buildShoppingList(
+            existing.matched_recipe_json,
+            getLocationForDate(today) ?? getLocation()
+          );
           setShoppingItems(items);
           setShoppingMealName(existing.matched_meal_name);
           saveShoppingList(today, items);
@@ -501,12 +507,28 @@ function AppContent() {
     return (
       <MatchResultScreen
         match={matchResult}
+        date={today}
         onViewRecipe={() => setShowRecipe(true)}
         onGoShopping={() => {
           setMatchDismissed(true);
           setActiveTab("einkauf");
         }}
         onDismiss={() => setMatchDismissed(true)}
+        onLocationPicked={(key: LocationKey) => {
+          // Preserve checked state on rebuild
+          if (!matchResult.matched_recipe_json) return;
+          const rebuilt = buildShoppingList(matchResult.matched_recipe_json, key).map(
+            (newItem) => {
+              const prev = shoppingItems.find((i) => i.name === newItem.name);
+              return prev
+                ? { ...newItem, checked: prev.checked, checked_by: prev.checked_by }
+                : newItem;
+            }
+          );
+          setShoppingItems(rebuilt);
+          setShoppingMealName(matchResult.matched_meal_name);
+          saveShoppingList(today, rebuilt);
+        }}
       />
     );
   }
@@ -721,7 +743,7 @@ function AppContent() {
             {suggestions.length > 0 && !loadingSuggestions && (
               <div
                 ref={scrollRef}
-                className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-5 px-5 scrollbar-hide"
+                className="flex gap-4 overflow-x-auto snap-x snap-mandatory py-3 -mx-5 px-5 scrollbar-hide"
                 style={{ WebkitOverflowScrolling: "touch" }}
               >
                 {suggestions.map((s) => (

@@ -3,6 +3,19 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MatchResult as MatchResultType } from "@/types/database";
+import {
+  LOCATIONS,
+  getLocationForDate,
+  setLocationForDate,
+  type LocationKey,
+} from "@/lib/packaging";
+
+const STORE_COLORS: Record<string, string> = {
+  Aldi: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  Lidl: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  Rewe: "bg-red-500/20 text-red-300 border-red-500/30",
+  Edeka: "bg-amber-500/20 text-amber-200 border-amber-500/30",
+};
 
 function Confetti() {
   const colors = ["#c74b3f", "#d4a843", "#6b9e5e", "#c47a5a", "#e8c05a"];
@@ -82,23 +95,40 @@ function CoinFlip({ whoKooks, onDone }: { whoKooks: string; onDone: () => void }
 
 export function MatchResultScreen({
   match,
+  date,
   onViewRecipe,
   onGoShopping,
   onDismiss,
+  onLocationPicked,
 }: {
   match: MatchResultType;
+  date: string;
   onViewRecipe: () => void;
   onGoShopping: () => void;
   onDismiss: () => void;
+  onLocationPicked: (key: LocationKey) => void;
 }) {
   const [showCook, setShowCook] = useState(false);
   const [cookRevealed, setCookRevealed] = useState(false);
+  const [location, setLocation] = useState<LocationKey | null>(null);
 
   useEffect(() => {
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     const t = setTimeout(() => setShowCook(true), 1500);
     return () => clearTimeout(t);
   }, []);
+
+  // Hydrate location from localStorage (per-day)
+  useEffect(() => {
+    setLocation(getLocationForDate(date));
+  }, [date]);
+
+  function handlePickLocation(key: LocationKey) {
+    setLocationForDate(date, key);
+    setLocation(key);
+    onLocationPicked(key);
+    if (navigator.vibrate) navigator.vibrate(40);
+  }
 
   return (
     <motion.div
@@ -163,8 +193,45 @@ export function MatchResultScreen({
         </motion.div>
       )}
 
+      {/* Location picker — erscheint nach Cook-Reveal, wenn für heute noch keiner gewählt wurde */}
+      {cookRevealed && !location && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-xs"
+        >
+          <p className="text-center text-sm text-text-muted mb-3">
+            Wo kauft ihr heute ein?
+          </p>
+          <div className="space-y-2">
+            {Object.values(LOCATIONS).map((loc) => (
+              <motion.button
+                key={loc.key}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => handlePickLocation(loc.key)}
+                className="w-full bg-bg-card hover:bg-bg-elevated rounded-2xl p-3.5 text-left transition-colors"
+              >
+                <div className="font-semibold text-text-primary mb-1 text-sm">
+                  {loc.label}
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {loc.stores.map((s) => (
+                    <span
+                      key={s}
+                      className={`text-[10px] px-2 py-0.5 rounded-full border ${STORE_COLORS[s]}`}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* CTAs */}
-      {cookRevealed && (
+      {cookRevealed && location && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -180,7 +247,7 @@ export function MatchResultScreen({
             onClick={onGoShopping}
             className="w-full py-3.5 rounded-2xl bg-bg-card border border-white/10 text-text-primary font-medium text-sm flex items-center justify-center gap-2"
           >
-            <span>🛒</span> Einkaufsliste
+            <span>🛒</span> Einkaufsliste · {LOCATIONS[location].label}
           </button>
           <button
             onClick={onDismiss}

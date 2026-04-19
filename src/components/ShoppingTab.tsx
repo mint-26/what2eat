@@ -13,7 +13,8 @@ import {
 import {
   LOCATIONS,
   getLocation,
-  setLocation,
+  getLocationForDate,
+  setLocationForDate,
   type LocationKey,
 } from "@/lib/packaging";
 
@@ -74,10 +75,10 @@ export function ShoppingTab({
   const [location, setLoc] = useState<LocationKey | null>(null);
   const [groupMode, setGroupMode] = useState<GroupMode>("store");
 
-  // Hydrate location from localStorage
+  // Hydrate location from localStorage: Tages-Location hat Vorrang vor zuletzt-benutztem
   useEffect(() => {
-    setLoc(getLocation());
-  }, []);
+    setLoc(getLocationForDate(date) ?? getLocation());
+  }, [date]);
 
   // Cross-device sync: pull remote list every 3s and adopt if it differs.
   // Last-write-wins — Konflikt-Auflösung erfolgt über die Schreibreihenfolge
@@ -123,7 +124,7 @@ export function ShoppingTab({
 
   // When location is picked, rebuild items with store assignments
   function pickLocation(key: LocationKey) {
-    setLocation(key);
+    setLocationForDate(date, key);
     setLoc(key);
     // Rebuild list with store info from current match
     const match = getTodaysMatch(date);

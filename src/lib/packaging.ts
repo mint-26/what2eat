@@ -254,14 +254,33 @@ export function recommendStore(
 // ────────────────────────────────────────────────────────────────────────────
 
 const LOC_KEY = "w2e_location";
+const LOC_DATE_KEY = (date: string) => `w2e_location_${date}`;
 
+function isLocationKey(v: string | null): v is LocationKey {
+  return v === "bad_soden" || v === "muenzenberg";
+}
+
+/** Zuletzt benutzter Standort (global, über alle Tage). */
 export function getLocation(): LocationKey | null {
   if (typeof window === "undefined") return null;
   const v = localStorage.getItem(LOC_KEY);
-  return v === "bad_soden" || v === "muenzenberg" ? v : null;
+  return isLocationKey(v) ? v : null;
 }
 
 export function setLocation(key: LocationKey) {
   if (typeof window === "undefined") return;
+  localStorage.setItem(LOC_KEY, key);
+}
+
+/** Standort für einen bestimmten Tag — Adrian & Janina pendeln zwischen Bad Soden und Münzenberg. */
+export function getLocationForDate(date: string): LocationKey | null {
+  if (typeof window === "undefined") return null;
+  const v = localStorage.getItem(LOC_DATE_KEY(date));
+  return isLocationKey(v) ? v : null;
+}
+
+export function setLocationForDate(date: string, key: LocationKey) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LOC_DATE_KEY(date), key);
   localStorage.setItem(LOC_KEY, key);
 }
